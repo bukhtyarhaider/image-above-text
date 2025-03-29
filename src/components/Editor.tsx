@@ -122,6 +122,12 @@ const Editor: React.FC = () => {
   // at the original image's resolution.
   const handleSave = () => {
     if (stageRef.current) {
+      // Hide the transformer so it doesn't appear in the export
+      if (trRef.current && trRef) {
+        trRef.current.hide();
+        trRef.current.getLayer()?.batchDraw();
+      }
+
       const pixelRatio = imgScale > 0 ? 1 / imgScale : 1;
       const uri = stageRef.current.toDataURL({
         x: origDims.x,
@@ -136,6 +142,12 @@ const Editor: React.FC = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      // Re-show the transformer after saving
+      if (trRef.current) {
+        trRef.current.show();
+        trRef.current.getLayer()?.batchDraw();
+      }
     }
   };
 
