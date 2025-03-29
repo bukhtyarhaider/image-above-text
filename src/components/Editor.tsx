@@ -204,14 +204,15 @@ const Editor: React.FC = () => {
   const selectedText = texts.find((text) => text.id === selectedTextId) || null;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-4">
-        <div className="relative w-full md:w-2/3 bg-white p-4 rounded shadow">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-7xl flex flex-col lg:flex-row gap-6">
+        {/* Canvas Section */}
+        <div className="flex-1 bg-white rounded-xl shadow-lg p-4 sm:p-6 relative overflow-hidden">
           <Stage
             width={stageWidth}
             height={stageHeight}
             ref={stageRef}
-            className="border border-gray-300 rounded"
+            className="w-full h-auto border border-gray-200 rounded-lg"
           >
             <Layer>
               {originalImg && (
@@ -261,54 +262,63 @@ const Editor: React.FC = () => {
             </Layer>
           </Stage>
           {isLoading && (
-            <div className="absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center z-10">
-              <div className="w-16 h-16 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
+            <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center z-10">
+              <div className="w-12 h-12 border-4 border-t-blue-500 border-gray-200 rounded-full animate-spin"></div>
             </div>
           )}
         </div>
 
-        <div className="w-full md:w-1/3 bg-white p-6 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">Options</h2>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">
+        {/* Sidebar Section */}
+        <div className="w-full lg:w-96 bg-white rounded-xl shadow-lg p-6 flex flex-col gap-6">
+          <h2 className="text-2xl font-bold text-gray-800">Editor Options</h2>
+
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Upload Image
             </label>
             <input
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
-              className="w-full p-2 border rounded"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          <div className="mb-4">
-            <button
-              onClick={addText}
-              className="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-            >
-              Add Text
-            </button>
-          </div>
-          <div className="mb-4">
-            <h3 className="text-lg font-medium mb-2">Text List</h3>
-            <div className="max-h-40 overflow-y-auto border rounded p-2">
+
+          {/* Add Text Button */}
+          <button
+            onClick={addText}
+            className="w-full py-3 bg-gradient-to-r from-green-400 to-green-600 text-white font-semibold rounded-lg hover:from-green-500 hover:to-green-700 transition-all"
+          >
+            Add Text
+          </button>
+
+          {/* Text List */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">
+              Text List
+            </h3>
+            <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg bg-gray-50 p-2">
               {texts.length === 0 ? (
-                <p className="text-sm text-gray-500">No text added yet.</p>
+                <p className="text-sm text-gray-500 text-center py-2">
+                  No text added yet.
+                </p>
               ) : (
                 texts.map((text) => (
                   <div
                     key={text.id}
-                    className={`flex items-center justify-between p-2 rounded mb-1 ${
+                    className={`flex items-center justify-between p-3 rounded-lg mb-2 ${
                       selectedTextId === text.id
-                        ? "bg-blue-100"
+                        ? "bg-blue-50"
                         : "hover:bg-gray-100"
-                    }`}
+                    } transition-colors`}
                   >
                     <div
                       className="flex-1 cursor-pointer truncate"
                       onClick={() => handleTextSelect(text.id)}
                       style={{
                         fontFamily: text.fontFamily,
-                        fontSize: `${Math.min(text.fontSize, 16)}px`, // Cap preview size
+                        fontSize: `${Math.min(text.fontSize, 16)}px`,
                         color: text.fill,
                         opacity: text.opacity,
                       }}
@@ -317,7 +327,7 @@ const Editor: React.FC = () => {
                     </div>
                     <button
                       onClick={() => deleteText(text.id)}
-                      className="ml-2 text-red-500 hover:text-red-700"
+                      className="ml-2 text-red-500 hover:text-red-700 transition-colors"
                       title="Delete Text"
                     >
                       <svg
@@ -340,21 +350,25 @@ const Editor: React.FC = () => {
               )}
             </div>
           </div>
+
+          {/* Selected Text Controls */}
           {selectedText && (
-            <>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Text</label>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Text Content
+                </label>
                 <input
                   type="text"
                   value={selectedText.text}
                   onChange={(e) =>
                     updateTextProperty(selectedText.id, "text", e.target.value)
                   }
-                  className="w-full p-2 border rounded"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Font Color
                 </label>
                 <input
@@ -363,11 +377,11 @@ const Editor: React.FC = () => {
                   onChange={(e) =>
                     updateTextProperty(selectedText.id, "fill", e.target.value)
                   }
-                  className="w-full p-2 border rounded"
+                  className="w-full h-12 rounded-lg border border-gray-300 cursor-pointer"
                 />
               </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Font Opacity
                 </label>
                 <input
@@ -383,24 +397,24 @@ const Editor: React.FC = () => {
                       parseFloat(e.target.value)
                     )
                   }
-                  className="w-full"
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
                 />
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 mt-1">
                   {Math.round(selectedText.opacity * 100)}%
                 </div>
               </div>
-              <div className="mb-4 relative">
-                <label className="block text-sm font-medium mb-1">
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Font Type
                 </label>
                 <button
                   onClick={() => setIsFontDropdownOpen(!isFontDropdownOpen)}
-                  className="w-full p-2 border rounded text-left flex items-center justify-between"
+                  className="w-full p-3 border border-gray-300 rounded-lg text-left flex items-center justify-between bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   style={{ fontFamily: selectedFont }}
                 >
                   <span>{selectedFont}</span>
                   <svg
-                    className="w-4 h-4"
+                    className="w-5 h-5 text-gray-500"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -414,7 +428,7 @@ const Editor: React.FC = () => {
                   </svg>
                 </button>
                 {isFontDropdownOpen && (
-                  <div className="absolute z-20 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
+                  <div className="absolute z-20 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {fonts.map((font) => (
                       <div
                         key={font}
@@ -441,7 +455,7 @@ const Editor: React.FC = () => {
                           );
                           setIsFontDropdownOpen(false);
                         }}
-                        className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                        className="px-4 py-2 cursor-pointer hover:bg-gray-100 transition-colors"
                         style={{ fontFamily: font }}
                       >
                         {font}
@@ -450,16 +464,16 @@ const Editor: React.FC = () => {
                   </div>
                 )}
               </div>
-            </>
+            </div>
           )}
-          <div className="mb-4">
-            <button
-              onClick={handleSave}
-              className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Save Canvas
-            </button>
-          </div>
+
+          {/* Save Button */}
+          <button
+            onClick={handleSave}
+            className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-blue-800 transition-all"
+          >
+            Save Canvas
+          </button>
         </div>
       </div>
     </div>
