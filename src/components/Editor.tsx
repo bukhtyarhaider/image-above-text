@@ -23,6 +23,7 @@ const Editor: React.FC = () => {
   const [selectedFont, setSelectedFont] = useState<string>("Arial");
   const [isFontDropdownOpen, setIsFontDropdownOpen] = useState<boolean>(false);
 
+  const [imgScale, setImgScale] = useState<number>(1);
   const [textProps, setTextProps] = useState<TextProperties>({
     text: "Your Text Here",
     x: 100,
@@ -49,6 +50,7 @@ const Editor: React.FC = () => {
           stageWidth / img.width,
           stageHeight / img.height
         );
+        setImgScale(scale); // Save the scale for export
         const width = img.width * scale;
         const height = img.height * scale;
 
@@ -113,6 +115,27 @@ const Editor: React.FC = () => {
       });
       node.scaleX(1);
       node.scaleY(1);
+    }
+  };
+
+  // Save the current canvas cropped to the original image boundaries
+  // at the original image's resolution.
+  const handleSave = () => {
+    if (stageRef.current) {
+      const pixelRatio = imgScale > 0 ? 1 / imgScale : 1;
+      const uri = stageRef.current.toDataURL({
+        x: origDims.x,
+        y: origDims.y,
+        width: origDims.width,
+        height: origDims.height,
+        pixelRatio: pixelRatio,
+      });
+      const link = document.createElement("a");
+      link.download = `image_above_text`;
+      link.href = uri;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
@@ -287,6 +310,14 @@ const Editor: React.FC = () => {
                 ))}
               </div>
             )}
+          </div>
+          <div className="mb-4">
+            <button
+              onClick={handleSave}
+              className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Save Canvas
+            </button>
           </div>
         </div>
       </div>
