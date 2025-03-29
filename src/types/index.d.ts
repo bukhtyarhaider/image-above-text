@@ -1,4 +1,5 @@
-type TextProperties = {
+interface TextProperties {
+  id: string;
   text: string;
   x: number;
   y: number;
@@ -6,4 +7,4 @@ type TextProperties = {
   fontFamily: string;
   fill: string;
   opacity: number;
-};
+}

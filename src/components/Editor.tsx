@@ -24,18 +24,22 @@ const Editor: React.FC = () => {
   const [isFontDropdownOpen, setIsFontDropdownOpen] = useState<boolean>(false);
 
   const [imgScale, setImgScale] = useState<number>(1);
-  const [textProps, setTextProps] = useState<TextProperties>({
-    text: "Your Text Here",
-    x: 100,
-    y: 100,
-    fontSize: 24,
-    fontFamily: "Arial",
-    fill: "#000000",
-    opacity: 1,
-  });
+  const [texts, setTexts] = useState<TextProperties[]>([
+    {
+      id: "text-1",
+      text: "Your Text Here",
+      x: 100,
+      y: 100,
+      fontSize: 24,
+      fontFamily: "Arial",
+      fill: "#000000",
+      opacity: 1,
+    },
+  ]);
+  const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
 
   const stageRef = useRef<Konva.Stage | null>(null);
-  const textRef = useRef<Konva.Text | null>(null);
+  const textRefs = useRef<{ [key: string]: Konva.Text }>({});
   const trRef = useRef<Konva.Transformer | null>(null);
   const fonts = ["Arial", "Helvetica", "Times New Roman"];
 
@@ -50,7 +54,7 @@ const Editor: React.FC = () => {
           stageWidth / img.width,
           stageHeight / img.height
         );
-        setImgScale(scale); // Save the scale for export
+        setImgScale(scale);
         const width = img.width * scale;
         const height = img.height * scale;
 
@@ -70,9 +74,7 @@ const Editor: React.FC = () => {
       const imageUrl = URL.createObjectURL(file);
       const blob = await fetch(imageUrl).then((res) => res.blob());
       const result = await removeBackground(blob);
-      if (!result) {
-        throw new Error("Background removal returned no result.");
-      }
+      if (!result) throw new Error("Background removal failed.");
       const processedUrl = URL.createObjectURL(result);
       const processedImg = new window.Image();
       processedImg.src = processedUrl;
@@ -94,28 +96,69 @@ const Editor: React.FC = () => {
     }
   };
 
-  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    const newX = e.target.x();
-    const newY = e.target.y();
-    setTextProps({ ...textProps, x: newX, y: newY });
+  const addText = () => {
+    const newText: TextProperties = {
+      id: `text-${Date.now()}`,
+      text: "New Text",
+      x: 150,
+      y: 150,
+      fontSize: 24,
+      fontFamily: "Arial",
+      fill: "#000000",
+      opacity: 1,
+    };
+    setTexts([...texts, newText]);
+    setSelectedTextId(newText.id);
   };
 
-  const handleTransformEnd = () => {
-    if (textRef.current) {
-      const node = textRef.current;
+  const deleteText = (id: string) => {
+    setTexts((prev) => prev.filter((text) => text.id !== id));
+    if (selectedTextId === id) setSelectedTextId(null); // Deselect if deleted
+  };
+
+  const handleTextSelect = (id: string) => {
+    setSelectedTextId(id);
+  };
+
+  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>, id: string) => {
+    const newX = e.target.x();
+    const newY = e.target.y();
+    setTexts((prev) =>
+      prev.map((text) =>
+        text.id === id ? { ...text, x: newX, y: newY } : text
+      )
+    );
+  };
+
+  const handleTransformEnd = (id: string) => {
+    const node = textRefs.current[id];
+    if (node) {
       const scaleX = node.scaleX();
       const newX = node.x();
       const newY = node.y();
-      const newFontSize = textProps.fontSize * scaleX;
-      setTextProps({
-        ...textProps,
-        x: newX,
-        y: newY,
-        fontSize: newFontSize,
-      });
+      const newFontSize = Math.round(node.fontSize() * scaleX);
+      setTexts((prev) =>
+        prev.map((text) =>
+          text.id === id
+            ? { ...text, x: newX, y: newY, fontSize: newFontSize }
+            : text
+        )
+      );
       node.scaleX(1);
       node.scaleY(1);
     }
+  };
+
+  const updateTextProperty = (
+    id: string,
+    property: keyof TextProperties,
+    value: string | number
+  ) => {
+    setTexts((prev) =>
+      prev.map((text) =>
+        text.id === id ? { ...text, [property]: value } : text
+      )
+    );
   };
 
   // Save the current canvas cropped to the original image boundaries
@@ -123,7 +166,7 @@ const Editor: React.FC = () => {
   const handleSave = () => {
     if (stageRef.current) {
       // Hide the transformer so it doesn't appear in the export
-      if (trRef.current && trRef) {
+      if (trRef.current) {
         trRef.current.hide();
         trRef.current.getLayer()?.batchDraw();
       }
@@ -134,10 +177,10 @@ const Editor: React.FC = () => {
         y: origDims.y,
         width: origDims.width,
         height: origDims.height,
-        pixelRatio: pixelRatio,
+        pixelRatio,
       });
       const link = document.createElement("a");
-      link.download = `image_above_text`;
+      link.download = `image_with_texts`;
       link.href = uri;
       document.body.appendChild(link);
       link.click();
@@ -152,11 +195,13 @@ const Editor: React.FC = () => {
   };
 
   useEffect(() => {
-    if (trRef.current && textRef.current) {
-      trRef.current.nodes([textRef.current]);
+    if (trRef.current && selectedTextId && textRefs.current[selectedTextId]) {
+      trRef.current.nodes([textRefs.current[selectedTextId]]);
       trRef.current.getLayer()?.batchDraw();
     }
-  }, [textProps]);
+  }, [selectedTextId]);
+
+  const selectedText = texts.find((text) => text.id === selectedTextId) || null;
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
@@ -180,19 +225,26 @@ const Editor: React.FC = () => {
               )}
             </Layer>
             <Layer>
-              <Text
-                text={textProps.text}
-                x={textProps.x}
-                y={textProps.y}
-                fontSize={textProps.fontSize}
-                fontFamily={textProps.fontFamily}
-                fill={textProps.fill}
-                opacity={textProps.opacity}
-                draggable
-                ref={textRef}
-                onDragEnd={handleDragEnd}
-                onTransformEnd={handleTransformEnd}
-              />
+              {texts.map((text) => (
+                <Text
+                  key={text.id}
+                  text={text.text}
+                  x={text.x}
+                  y={text.y}
+                  fontSize={text.fontSize}
+                  fontFamily={text.fontFamily}
+                  fill={text.fill}
+                  opacity={text.opacity}
+                  draggable
+                  ref={(node) => {
+                    if (node) textRefs.current[text.id] = node;
+                  }}
+                  onClick={() => handleTextSelect(text.id)}
+                  onTap={() => handleTextSelect(text.id)}
+                  onDragEnd={(e) => handleDragEnd(e, text.id)}
+                  onTransformEnd={() => handleTransformEnd(text.id)}
+                />
+              ))}
               <Transformer ref={trRef} />
             </Layer>
             <Layer>
@@ -229,100 +281,177 @@ const Editor: React.FC = () => {
             />
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Text</label>
-            <input
-              type="text"
-              value={textProps.text}
-              onChange={(e) =>
-                setTextProps({ ...textProps, text: e.target.value })
-              }
-              className="w-full p-2 border rounded"
-            />
+            <button
+              onClick={addText}
+              className="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            >
+              Add Text
+            </button>
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Font Color</label>
-            <input
-              type="color"
-              value={textProps.fill}
-              onChange={(e) =>
-                setTextProps({ ...textProps, fill: e.target.value })
-              }
-              className="w-full p-2 border rounded"
-            />
-          </div>
-          {/* Font Opacity Slider */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">
-              Font Opacity
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={textProps.opacity}
-              onChange={(e) =>
-                setTextProps({
-                  ...textProps,
-                  opacity: parseFloat(e.target.value),
-                })
-              }
-              className="w-full"
-            />
-            <div className="text-sm text-gray-600">
-              {Math.round(textProps.opacity * 100)}%
+            <h3 className="text-lg font-medium mb-2">Text List</h3>
+            <div className="max-h-40 overflow-y-auto border rounded p-2">
+              {texts.length === 0 ? (
+                <p className="text-sm text-gray-500">No text added yet.</p>
+              ) : (
+                texts.map((text) => (
+                  <div
+                    key={text.id}
+                    className={`flex items-center justify-between p-2 rounded mb-1 ${
+                      selectedTextId === text.id
+                        ? "bg-blue-100"
+                        : "hover:bg-gray-100"
+                    }`}
+                  >
+                    <div
+                      className="flex-1 cursor-pointer truncate"
+                      onClick={() => handleTextSelect(text.id)}
+                      style={{
+                        fontFamily: text.fontFamily,
+                        fontSize: `${Math.min(text.fontSize, 16)}px`, // Cap preview size
+                        color: text.fill,
+                        opacity: text.opacity,
+                      }}
+                    >
+                      {text.text}
+                    </div>
+                    <button
+                      onClick={() => deleteText(text.id)}
+                      className="ml-2 text-red-500 hover:text-red-700"
+                      title="Delete Text"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
-          <div className="mb-4 relative">
-            <label className="block text-sm font-medium mb-1">Font Type</label>
-            <button
-              onClick={() => setIsFontDropdownOpen(!isFontDropdownOpen)}
-              className="w-full p-2 border rounded text-left flex items-center justify-between"
-              style={{ fontFamily: selectedFont }}
-            >
-              <span>{selectedFont}</span>
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
+          {selectedText && (
+            <>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Text</label>
+                <input
+                  type="text"
+                  value={selectedText.text}
+                  onChange={(e) =>
+                    updateTextProperty(selectedText.id, "text", e.target.value)
+                  }
+                  className="w-full p-2 border rounded"
                 />
-              </svg>
-            </button>
-            {isFontDropdownOpen && (
-              <div className="absolute z-20 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
-                {fonts.map((font) => (
-                  <div
-                    key={font}
-                    onMouseEnter={() =>
-                      setTextProps((prev) => ({ ...prev, fontFamily: font }))
-                    }
-                    onMouseLeave={() =>
-                      setTextProps((prev) => ({
-                        ...prev,
-                        fontFamily: selectedFont,
-                      }))
-                    }
-                    onClick={() => {
-                      setSelectedFont(font);
-                      setTextProps((prev) => ({ ...prev, fontFamily: font }));
-                      setIsFontDropdownOpen(false);
-                    }}
-                    className="px-4 py-2 cursor-pointer hover:bg-gray-100"
-                    style={{ fontFamily: font }}
-                  >
-                    {font}
-                  </div>
-                ))}
               </div>
-            )}
-          </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">
+                  Font Color
+                </label>
+                <input
+                  type="color"
+                  value={selectedText.fill}
+                  onChange={(e) =>
+                    updateTextProperty(selectedText.id, "fill", e.target.value)
+                  }
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">
+                  Font Opacity
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={selectedText.opacity}
+                  onChange={(e) =>
+                    updateTextProperty(
+                      selectedText.id,
+                      "opacity",
+                      parseFloat(e.target.value)
+                    )
+                  }
+                  className="w-full"
+                />
+                <div className="text-sm text-gray-600">
+                  {Math.round(selectedText.opacity * 100)}%
+                </div>
+              </div>
+              <div className="mb-4 relative">
+                <label className="block text-sm font-medium mb-1">
+                  Font Type
+                </label>
+                <button
+                  onClick={() => setIsFontDropdownOpen(!isFontDropdownOpen)}
+                  className="w-full p-2 border rounded text-left flex items-center justify-between"
+                  style={{ fontFamily: selectedFont }}
+                >
+                  <span>{selectedFont}</span>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                {isFontDropdownOpen && (
+                  <div className="absolute z-20 mt-1 w-full bg-white border rounded shadow max-h-60 overflow-y-auto">
+                    {fonts.map((font) => (
+                      <div
+                        key={font}
+                        onMouseEnter={() =>
+                          updateTextProperty(
+                            selectedText.id,
+                            "fontFamily",
+                            font
+                          )
+                        }
+                        onMouseLeave={() =>
+                          updateTextProperty(
+                            selectedText.id,
+                            "fontFamily",
+                            selectedFont
+                          )
+                        }
+                        onClick={() => {
+                          setSelectedFont(font);
+                          updateTextProperty(
+                            selectedText.id,
+                            "fontFamily",
+                            font
+                          );
+                          setIsFontDropdownOpen(false);
+                        }}
+                        className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                        style={{ fontFamily: font }}
+                      >
+                        {font}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
           <div className="mb-4">
             <button
               onClick={handleSave}
