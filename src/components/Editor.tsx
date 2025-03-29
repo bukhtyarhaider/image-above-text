@@ -215,6 +215,29 @@ const Editor: React.FC = () => {
               className="w-full p-2 border rounded"
             />
           </div>
+          {/* Font Opacity Slider */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">
+              Font Opacity
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={textProps.opacity}
+              onChange={(e) =>
+                setTextProps({
+                  ...textProps,
+                  opacity: parseFloat(e.target.value),
+                })
+              }
+              className="w-full"
+            />
+            <div className="text-sm text-gray-600">
+              {Math.round(textProps.opacity * 100)}%
+            </div>
+          </div>
           <div className="mb-4 relative">
             <label className="block text-sm font-medium mb-1">Font Type</label>
             <button
