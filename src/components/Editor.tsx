@@ -1,5 +1,12 @@
-import { useState } from "react";
-import { Stage, Layer, Image as KonvaImage } from "react-konva";
+import { useState, useRef, useEffect } from "react";
+import {
+  Stage,
+  Layer,
+  Image as KonvaImage,
+  Text,
+  Transformer,
+} from "react-konva";
+import Konva from "konva";
 import { removeBackground } from "@imgly/background-removal";
 
 const Editor: React.FC = () => {
@@ -14,6 +21,20 @@ const Editor: React.FC = () => {
   const [bgDims, setBgDims] = useState({ width: 0, height: 0, x: 0, y: 0 });
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  const [textProps, setTextProps] = useState<TextProperties>({
+    text: "Your Text Here",
+    x: 100,
+    y: 100,
+    fontSize: 24,
+    fontFamily: "Arial",
+    fill: "#000000",
+    opacity: 1,
+  });
+
+  const stageRef = useRef<Konva.Stage | null>(null);
+  const textRef = useRef<Konva.Text | null>(null);
+  const trRef = useRef<Konva.Transformer | null>(null);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -21,7 +42,6 @@ const Editor: React.FC = () => {
       const img = new window.Image();
       img.src = imageUrl;
       img.onload = () => {
-        // Calculate scale to fit the image in the stage
         const scale = Math.min(
           stageWidth / img.width,
           stageHeight / img.height
@@ -63,17 +83,52 @@ const Editor: React.FC = () => {
         setBgRemovedImg(processedImg);
       };
     } catch {
-      // Fallback to original image if background removal fails
       setBgRemovedImg(originalImg);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+    const newX = e.target.x();
+    const newY = e.target.y();
+    setTextProps({ ...textProps, x: newX, y: newY });
+  };
+
+  const handleTransformEnd = () => {
+    if (textRef.current) {
+      const node = textRef.current;
+      const scaleX = node.scaleX();
+      const newX = node.x();
+      const newY = node.y();
+      const newFontSize = textProps.fontSize * scaleX;
+      setTextProps({
+        ...textProps,
+        x: newX,
+        y: newY,
+        fontSize: newFontSize,
+      });
+      node.scaleX(1);
+      node.scaleY(1);
+    }
+  };
+
+  useEffect(() => {
+    if (trRef.current && textRef.current) {
+      trRef.current.nodes([textRef.current]);
+      trRef.current.getLayer()?.batchDraw();
+    }
+  }, [textProps]);
+
   return (
     <div>
       <input type="file" accept="image/*" onChange={handleImageUpload} />
-      <Stage width={stageWidth} height={stageHeight}>
+      <input
+        type="text"
+        value={textProps.text}
+        onChange={(e) => setTextProps({ ...textProps, text: e.target.value })}
+      />
+      <Stage width={stageWidth} height={stageHeight} ref={stageRef}>
         <Layer>
           {originalImg && (
             <KonvaImage
@@ -86,6 +141,22 @@ const Editor: React.FC = () => {
           )}
         </Layer>
         <Layer>
+          <Text
+            text={textProps.text}
+            x={textProps.x}
+            y={textProps.y}
+            fontSize={textProps.fontSize}
+            fontFamily={textProps.fontFamily}
+            fill={textProps.fill}
+            opacity={textProps.opacity}
+            draggable
+            ref={textRef}
+            onDragEnd={handleDragEnd}
+            onTransformEnd={handleTransformEnd}
+          />
+          <Transformer ref={trRef} />
+        </Layer>
+        <Layer>
           {bgRemovedImg && (
             <KonvaImage
               image={bgRemovedImg}
@@ -93,6 +164,7 @@ const Editor: React.FC = () => {
               y={bgDims.y}
               width={bgDims.width}
               height={bgDims.height}
+              listening={false}
             />
           )}
         </Layer>
