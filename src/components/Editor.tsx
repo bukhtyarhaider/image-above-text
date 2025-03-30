@@ -10,9 +10,6 @@ import Konva from "konva";
 import { removeBackground } from "@imgly/background-removal";
 
 const Editor: React.FC = () => {
-  const stageWidth = 800;
-  const stageHeight = 600;
-
   const [originalImg, setOriginalImg] = useState<HTMLImageElement | null>(null);
   const [bgRemovedImg, setBgRemovedImg] = useState<HTMLImageElement | null>(
     null
@@ -37,11 +34,29 @@ const Editor: React.FC = () => {
     },
   ]);
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
+  const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
   const textRefs = useRef<{ [key: string]: Konva.Text }>({});
   const trRef = useRef<Konva.Transformer | null>(null);
   const fonts = ["Arial", "Helvetica", "Times New Roman"];
+
+  // Update canvas size based on container
+  const updateStageSize = () => {
+    if (containerRef.current) {
+      const containerWidth = containerRef.current.offsetWidth;
+      const aspectRatio = 4 / 3; // Maintain a 4:3 aspect ratio (adjustable)
+      const containerHeight = containerWidth / aspectRatio;
+      setStageSize({ width: containerWidth, height: containerHeight });
+    }
+  };
+
+  useEffect(() => {
+    updateStageSize();
+    window.addEventListener("resize", updateStageSize);
+    return () => window.removeEventListener("resize", updateStageSize);
+  }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -51,15 +66,15 @@ const Editor: React.FC = () => {
       img.src = imageUrl;
       img.onload = () => {
         const scale = Math.min(
-          stageWidth / img.width,
-          stageHeight / img.height
+          stageSize.width / img.width,
+          stageSize.height / img.height
         );
         setImgScale(scale);
         const width = img.width * scale;
         const height = img.height * scale;
 
-        const x = (stageWidth - width) / 2;
-        const y = (stageHeight - height) / 2;
+        const x = (stageSize.width - width) / 2;
+        const y = (stageSize.height - height) / 2;
 
         setOrigDims({ width, height, x, y });
         setOriginalImg(img);
@@ -83,8 +98,8 @@ const Editor: React.FC = () => {
         const width = processedImg.width * scale;
         const height = processedImg.height * scale;
 
-        const x = (stageWidth - width) / 2;
-        const y = (stageHeight - height) / 2;
+        const x = (stageSize.width - width) / 2;
+        const y = (stageSize.height - height) / 2;
 
         setBgDims({ width, height, x, y });
         setBgRemovedImg(processedImg);
@@ -100,8 +115,8 @@ const Editor: React.FC = () => {
     const newText: TextProperties = {
       id: `text-${Date.now()}`,
       text: "New Text",
-      x: 150,
-      y: 150,
+      x: stageSize.width / 6,
+      y: stageSize.height / 6,
       fontSize: 24,
       fontFamily: "Arial",
       fill: "#000000",
@@ -199,7 +214,7 @@ const Editor: React.FC = () => {
       trRef.current.nodes([textRefs.current[selectedTextId]]);
       trRef.current.getLayer()?.batchDraw();
     }
-  }, [selectedTextId]);
+  }, [selectedTextId, stageSize]);
 
   const selectedText = texts.find((text) => text.id === selectedTextId) || null;
 
@@ -209,8 +224,8 @@ const Editor: React.FC = () => {
         {/* Canvas Section */}
         <div className="flex-1 bg-white rounded-xl shadow-lg p-4 sm:p-6 relative overflow-hidden">
           <Stage
-            width={stageWidth}
-            height={stageHeight}
+            width={stageSize.width}
+            height={stageSize.height}
             ref={stageRef}
             className="w-full h-auto border border-gray-200 rounded-lg"
           >
