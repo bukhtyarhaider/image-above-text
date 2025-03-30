@@ -5,18 +5,7 @@ export const useTextManagement = (stageSize: {
   width: number;
   height: number;
 }) => {
-  const [texts, setTexts] = useState<TextProperties[]>([
-    {
-      id: "text-1",
-      text: "Your Text Here",
-      x: 100,
-      y: 100,
-      fontSize: 24,
-      fontFamily: "Arial",
-      fill: "#000000",
-      opacity: 1,
-    },
-  ]);
+  const [texts, setTexts] = useState<TextProperties[]>([]);
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
 
   const addText = () => {
