@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import {
   Stage,
   Layer,
@@ -24,6 +24,7 @@ const Editor: React.FC = () => {
   const stageRef = useRef<Konva.Stage | null>(null);
   const textRefs = useRef<{ [key: string]: Konva.Text }>({});
   const trRef = useRef<Konva.Transformer | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const stageSize = useStageSize(containerRef);
   const {
@@ -83,21 +84,75 @@ const Editor: React.FC = () => {
     }
   };
 
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleImageUpload({
+        target: { files },
+      } as React.ChangeEvent<HTMLInputElement>);
+    }
+  };
+
+  const handleCanvasClick = () => {
+    if (!originalImg && !isLoading) {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.onchange = (e: Event) => {
+        if (e.target instanceof HTMLInputElement) {
+          const event = {
+            target: {
+              files: e.target.files,
+            },
+          } as React.ChangeEvent<HTMLInputElement>;
+          handleImageUpload(event);
+        }
+      };
+      input.click();
+    }
+  };
+
   const selectedText = texts.find((text) => text.id === selectedTextId) || null;
+  const hasContent = bgRemovedImg && texts.length > 0;
 
   return (
     <div className="md:h-[100vh] md:w-[100vw] flex justify-center items-center p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-brand-50 to-brand-100">
       <div className="w-full md:max-h-[70vh] max-w-7xl flex flex-col lg:flex-row gap-8">
         {/* Canvas Container */}
         <div
-          className="flex-1 bg-white rounded-xl shadow-lg p-6 relative overflow-hidden transition-all duration-300 hover:shadow-xl"
+          className={`flex-1 bg-white rounded-xl shadow-lg p-6 relative overflow-hidden transition-all duration-300 hover:shadow-xl ${
+            isDraggingOver
+              ? "border-4 border-dashed border-brand-500 bg-brand-50/50"
+              : "border border-brand-200"
+          }`}
           ref={containerRef}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
         >
           <Stage
             width={stageSize.width}
             height={stageSize.height}
             ref={stageRef}
-            className="w-full border border-brand-100 rounded-lg bg-neutral-50 shadow-inner"
+            className={`w-full rounded-lg bg-neutral-50 shadow-inner transition-all duration-200 ${
+              !originalImg && !isLoading
+                ? "cursor-pointer hover:bg-neutral-100"
+                : ""
+            }`}
+            onClick={handleCanvasClick}
           >
             <Layer>
               {originalImg && (
@@ -148,9 +203,35 @@ const Editor: React.FC = () => {
               )}
             </Layer>
           </Stage>
+
+          {/* Drop Zone Overlay */}
+          {!originalImg && !isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div
+                className={`text-center transition-all duration-300 ${
+                  isDraggingOver ? "scale-110 text-brand-600" : "text-brand-500"
+                }`}
+              >
+                <ArrowUpTrayIcon className="w-16 h-16 mx-auto mb-4" />
+                <p className="text-lg font-medium">
+                  {isDraggingOver
+                    ? "Drop your image here!"
+                    : "Drag & drop or click to upload an image"}
+                </p>
+                <p className="text-sm mt-1 text-brand-400">
+                  Supported formats: JPG, PNG, GIF
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Loading Overlay */}
           {isLoading && (
             <div className="absolute inset-0 bg-brand-900 bg-opacity-50 flex items-center justify-center z-10 rounded-xl">
-              <div className="w-12 h-12 border-4 border-t-brand-300 border-brand-100 rounded-full animate-spin"></div>
+              <div className="text-center text-white">
+                <div className="w-12 h-12 border-4 border-t-brand-300 border-brand-100 rounded-full animate-spin mx-auto mb-2"></div>
+                <p>Processing your image...</p>
+              </div>
             </div>
           )}
         </div>
@@ -161,24 +242,16 @@ const Editor: React.FC = () => {
             <img src="/src/assets/logo.png" className="h-10" /> Image Above Text
           </h2>
 
-          <div>
-            <label className="text-sm font-medium text-brand-700 mb-2 flex items-center gap-2">
-              <ArrowUpTrayIcon className="w-5 h-5 text-brand-500" /> Upload
-              Image
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="w-full p-3 border border-brand-100 rounded-lg focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition-all duration-200 bg-neutral-50 hover:bg-white"
-            />
-          </div>
-
           <button
+            disabled={!bgRemovedImg}
             onClick={addText}
-            className="w-full py-3 bg-gradient-to-r from-brand-500 to-brand-700 text-white font-semibold rounded-lg hover:from-brand-700 hover:to-brand-900 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+            className={`w-full py-3 flex items-center justify-center gap-2 text-white font-semibold rounded-lg transition-all duration-300 transform ${
+              bgRemovedImg
+                ? "bg-gradient-to-r from-brand-500 to-brand-700 hover:from-brand-700 hover:to-brand-900 hover:scale-105"
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
           >
-            <PlusIcon className="w-5 h-5" /> Text
+            <PlusIcon className="w-5 h-5" /> Add Text
           </button>
 
           <TextList
@@ -195,9 +268,14 @@ const Editor: React.FC = () => {
 
           <button
             onClick={handleSave}
-            className="w-full py-3 bg-gradient-to-r from-brand-700 to-brand-900 text-white font-semibold rounded-lg hover:from-brand-900 hover:to-neutral-900 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
+            disabled={!hasContent}
+            className={`w-full py-3 flex items-center justify-center gap-2 text-white font-semibold rounded-lg transition-all duration-300 transform ${
+              hasContent
+                ? "bg-gradient-to-r from-brand-700 to-brand-900 hover:from-brand-900 hover:to-neutral-900 hover:scale-105"
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
           >
-            <DocumentCheckIcon className="w-5 h-5" /> Save
+            <DocumentCheckIcon className="w-5 h-5" /> Save Image
           </button>
         </div>
       </div>
