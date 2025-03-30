@@ -15,8 +15,8 @@ import { useImageProcessing } from "../hooks/useImageProcessing";
 import { useTextManagement } from "../hooks/useTextManagement";
 import {
   ArrowUpTrayIcon,
-  PencilSquareIcon,
   DocumentCheckIcon,
+  PlusIcon,
 } from "@heroicons/react/24/outline";
 
 const Editor: React.FC = () => {
@@ -178,7 +178,7 @@ const Editor: React.FC = () => {
             onClick={addText}
             className="w-full py-3 bg-gradient-to-r from-brand-500 to-brand-700 text-white font-semibold rounded-lg hover:from-brand-700 hover:to-brand-900 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
           >
-            <PencilSquareIcon className="w-5 h-5" /> Add Text
+            <PlusIcon className="w-5 h-5" /> Text
           </button>
 
           <TextList
@@ -197,7 +197,7 @@ const Editor: React.FC = () => {
             onClick={handleSave}
             className="w-full py-3 bg-gradient-to-r from-brand-700 to-brand-900 text-white font-semibold rounded-lg hover:from-brand-900 hover:to-neutral-900 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2"
           >
-            <DocumentCheckIcon className="w-5 h-5" /> Save Canvas
+            <DocumentCheckIcon className="w-5 h-5" /> Save
           </button>
         </div>
       </div>
