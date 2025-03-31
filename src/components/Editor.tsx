@@ -18,6 +18,8 @@ import {
   DocumentCheckIcon,
   PlusIcon,
 } from "@heroicons/react/24/outline";
+import WebFont from "webfontloader";
+import { FONTS } from "../constants/fonts";
 
 const Editor: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -124,6 +126,28 @@ const Editor: React.FC = () => {
       input.click();
     }
   };
+
+  useEffect(() => {
+    const webFonts = FONTS.filter(
+      (font: string) =>
+        ![
+          "Arial",
+          "Helvetica",
+          "Times New Roman",
+          "Courier New",
+          "Georgia",
+          "Verdana",
+        ].includes(font)
+    );
+    WebFont.load({
+      google: {
+        families: webFonts,
+      },
+      active: () => {
+        console.log("Web fonts loaded");
+      },
+    });
+  }, []);
 
   const selectedText = texts.find((text) => text.id === selectedTextId) || null;
   const hasContent = bgRemovedImg && texts.length > 0;
