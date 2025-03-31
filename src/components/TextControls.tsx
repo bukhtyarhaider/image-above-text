@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import { FONTS } from "../constants/fonts";
 
 interface TextControlsProps {
   selectedText: TextProperties | null;
@@ -17,14 +18,6 @@ const TextControls: React.FC<TextControlsProps> = ({
   const [selectedFont, setSelectedFont] = useState("Arial");
   const [isFontDropdownOpen, setIsFontDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const fonts = [
-    "Arial",
-    "Helvetica",
-    "Times New Roman",
-    "Georgia",
-    "Verdana",
-    "Roboto",
-  ];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -84,7 +77,7 @@ const TextControls: React.FC<TextControlsProps> = ({
           </button>
           {isFontDropdownOpen && (
             <div className="absolute z-20 mt-1 w-full bg-white border border-brand-100 rounded-lg shadow-lg max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-brand-300 scrollbar-track-brand-50">
-              {fonts.map((font) => (
+              {FONTS.map((font) => (
                 <div
                   key={font}
                   onMouseEnter={() =>
