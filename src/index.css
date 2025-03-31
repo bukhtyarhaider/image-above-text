@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Ensure full-screen app-like experience */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 /* 
    Replace the default theme entirely (optional) 
    by setting --*: initial 
@@ -79,4 +89,31 @@
       opacity: 1;
     }
   }
+  /* Tailwind Animation for Mobile Bottom Sheet */
+  @keyframes slide-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Custom Scrollbar for Mobile */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #a0aec0;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background-color: #edf2f7;
 }
