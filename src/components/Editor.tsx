@@ -40,6 +40,7 @@ const Editor: React.FC = () => {
     isLoading,
     imgScale,
     handleImageUpload,
+    isOffline,
   } = useImageProcessing(stageSize);
   const {
     texts,
@@ -146,6 +147,12 @@ const Editor: React.FC = () => {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-gradient-to-br from-brand-50 to-brand-100 overflow-hidden">
+      {/* Offline Warning */}
+      {isOffline && (
+        <div className="fixed top-0 left-0 right-0 bg-yellow-500 text-white text-center p-2 z-30">
+          You are offline. Background removal is unavailable.
+        </div>
+      )}
       {/* Mobile Header */}
       <header className="lg:hidden flex items-center justify-between p-4 bg-brand-700 text-white shrink-0">
         <h2 className="text-xl font-bold flex items-center gap-2">
