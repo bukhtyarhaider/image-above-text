@@ -5,6 +5,7 @@ const STATIC_ASSETS = [
   '/src/assets/logo.png',
   '/src/assets/icon-192x192.png',
   '/src/assets/icon-512x512.png',
+  '/src/assets/offline-placeholder.png'
 ];
 
 // Install event: Cache static assets
@@ -79,7 +80,7 @@ self.addEventListener('fetch', (event) => {
         .catch(() => {
           // Fallback for images if offline
           if (request.destination === 'image') {
-            return caches.match('/src/assets/offline-placeholder.png') || // Add this asset
+            return caches.match('/src/assets/offline-placeholder.png') ||
               new Response('Image unavailable offline', { status: 503 });
           }
           return new Response('Resource unavailable offline', { status: 503 });
