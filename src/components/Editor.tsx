@@ -20,6 +20,7 @@ import {
 } from "@heroicons/react/24/outline";
 import WebFont from "webfontloader";
 import { FONTS } from "../constants/fonts";
+import logoImg from "/src/assets/logo.png";
 
 const Editor: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -148,7 +149,7 @@ const Editor: React.FC = () => {
       {/* Mobile Header */}
       <header className="lg:hidden flex items-center justify-between p-4 bg-brand-700 text-white shrink-0">
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <img src="/src/assets/logo.png" className="h-8" /> Image Above Text
+          <img src={logoImg} className="h-8" /> Image Above Text
         </h2>
         <button onClick={() => setIsSidebarOpen(true)}>
           <Bars3Icon className="w-8 h-8" />
