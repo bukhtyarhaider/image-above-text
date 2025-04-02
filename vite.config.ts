@@ -13,8 +13,6 @@ export default defineConfig({
       workbox: {
         maximumFileSizeToCacheInBytes: 25 * 1024 * 1024, // 25 MB
       },
-      srcDir: "src",
-      filename: "service-worker.js",
       includeAssets: ["src/assets/**/*"],
       manifest: {
         short_name: "ImageAboveText",
