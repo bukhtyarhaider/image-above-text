@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { removeBackground } from "@imgly/background-removal";
+import { db } from "../lib/db";
 
 export const useImageProcessing = (stageSize: {
   width: number;
@@ -13,82 +14,164 @@ export const useImageProcessing = (stageSize: {
   const [bgDims, setBgDims] = useState({ width: 0, height: 0, x: 0, y: 0 });
   const [isLoading, setIsLoading] = useState(false);
   const [imgScale, setImgScale] = useState(1);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [objectUrls, setObjectUrls] = useState<string[]>([]);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
-  const processImage = (img: HTMLImageElement, scale: number) => {
-    const width = img.width * scale;
-    const height = img.height * scale;
-    const x = (stageSize.width - width) / 2;
-    const y = (stageSize.height - height) / 2;
-    return { width, height, x, y };
-  };
+  // Cleanup object URLs
+  useEffect(() => {
+    return () => {
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [objectUrls]);
 
-  const cacheImage = (url: string) => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.controller?.postMessage({
-        type: "CACHE_IMAGE",
-        url,
-      });
-    }
-  };
+  const addObjectUrl = useCallback((url: string) => {
+    setObjectUrls((prev) => [...prev, url]);
+  }, []);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const imageUrl = URL.createObjectURL(file);
-    const img = new window.Image();
-    img.src = imageUrl;
-
-    img.onload = async () => {
-      const scale = Math.min(
-        stageSize.width / img.width,
-        stageSize.height / img.height
-      );
-      setImgScale(scale);
-      const dims = processImage(img, scale);
-      setOrigDims(dims);
-      setOriginalImg(img);
-
-      // Cache the original image
-      cacheImage(imageUrl);
-
-      setIsLoading(true);
+  // Hydrate state from IndexedDB
+  useEffect(() => {
+    const hydrateState = async () => {
       try {
-        if (navigator.onLine) {
-          const blob = await fetch(imageUrl).then((res) => res.blob());
-          const result = await removeBackground(blob);
-          if (!result) throw new Error("Background removal failed");
+        const state = await db.loadState();
+        if (!state) return setIsHydrated(true);
 
-          const processedUrl = URL.createObjectURL(result);
-          const processedImg = new window.Image();
-          processedImg.src = processedUrl;
+        const loadImageFromBlob = async (blob: Blob | undefined) => {
+          if (!blob) return null;
+          const url = URL.createObjectURL(blob);
+          addObjectUrl(url);
+          return new Promise<HTMLImageElement>((resolve) => {
+            const img = new Image();
+            img.src = url;
+            img.onload = () => resolve(img);
+          });
+        };
 
-          processedImg.onload = () => {
-            const bgDims = processImage(processedImg, scale);
-            setBgDims(bgDims);
-            setBgRemovedImg(processedImg);
-            cacheImage(processedUrl); // Cache the processed image
-          };
-        } else {
-          // Offline: Use original image as fallback
-          setBgRemovedImg(img);
-          setBgDims(dims);
-          console.warn("Offline mode: Background removal unavailable");
+        // Load original image
+        const originalImg = await loadImageFromBlob(state.originalImage?.blob);
+        if (originalImg) {
+          setOriginalImg(originalImg);
+          setOrigDims(state.origDims);
         }
+
+        // Load processed image
+        const processedImg = await loadImageFromBlob(
+          state.processedImage?.blob
+        );
+        if (processedImg) {
+          setBgRemovedImg(processedImg);
+          setBgDims(state.bgDims);
+        }
+
+        setImgScale(state.imgScale);
       } catch (error) {
-        console.error("Image processing error:", error);
-        setBgRemovedImg(img); // Fallback to original image
-        setBgDims(dims);
+        console.error("State hydration failed:", error);
       } finally {
-        setIsLoading(false);
+        setIsHydrated(true);
       }
     };
-  };
 
-  // Monitor online/offline status
-  window.addEventListener("online", () => setIsOffline(false));
-  window.addEventListener("offline", () => setIsOffline(true));
+    hydrateState();
+  }, [addObjectUrl]);
+
+  const processImageDimensions = useCallback(
+    (img: HTMLImageElement, scale: number) => {
+      const width = img.width * scale;
+      const height = img.height * scale;
+      const x = (stageSize.width - width) / 2;
+      const y = (stageSize.height - height) / 2;
+      return { width, height, x, y };
+    },
+    [stageSize]
+  );
+
+  const handleImageUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setIsLoading(true);
+      const url = URL.createObjectURL(file);
+      addObjectUrl(url);
+
+      try {
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const image = new Image();
+          image.src = url;
+          image.onload = () => resolve(image);
+          image.onerror = reject;
+        });
+
+        const scale = Math.min(
+          stageSize.width / img.width,
+          stageSize.height / img.height,
+          1
+        );
+        const dims = processImageDimensions(img, scale);
+
+        // Save initial state
+        const originalBlob = await fetch(url).then((r) => r.blob());
+        await db.saveState({
+          originalImage: { blob: originalBlob },
+          processedImage: undefined,
+          texts: [],
+          origDims: dims,
+          bgDims: dims,
+          imgScale: scale,
+        });
+
+        setOriginalImg(img);
+        setOrigDims(dims);
+        setImgScale(scale);
+
+        // Process background removal
+        const processedBlob = await removeBackground(originalBlob);
+        const processedUrl = URL.createObjectURL(processedBlob);
+        addObjectUrl(processedUrl);
+
+        const processedImg = await new Promise<HTMLImageElement>((resolve) => {
+          const img = new Image();
+          img.src = processedUrl;
+          img.onload = () => resolve(img);
+        });
+
+        const processedDims = processImageDimensions(processedImg, scale);
+
+        // Save final state
+        await db.saveState({
+          originalImage: { blob: originalBlob },
+          processedImage: { blob: processedBlob },
+          origDims: dims,
+          bgDims: processedDims,
+          imgScale: scale,
+          texts: [],
+        });
+
+        setBgRemovedImg(processedImg);
+        setBgDims(processedDims);
+      } catch (error) {
+        console.error("Image processing failed:", error);
+        setBgRemovedImg(null);
+      } finally {
+        setIsLoading(false);
+        URL.revokeObjectURL(url);
+      }
+    },
+    [stageSize, processImageDimensions, addObjectUrl]
+  );
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   return {
     originalImg,
@@ -98,6 +181,7 @@ export const useImageProcessing = (stageSize: {
     isLoading,
     imgScale,
     handleImageUpload,
+    isHydrated,
     isOffline,
   };
 };
