@@ -196,11 +196,15 @@ const Editor: React.FC = () => {
     <div className="h-screen w-screen flex flex-col bg-gradient-to-br from-brand-50 to-brand-100 overflow-hidden">
       {!isHydrated && (
         <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50">
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 border-4 border-t-brand-500 border-brand-200 rounded-full animate-spin mb-4" />
-            <p className="text-brand-700 font-medium ">
-              Loading your workspace...
-            </p>
+          <div className="relative text-brand-500 text-center flex flex-col items-center z-10">
+            <div className="w-12 h-12 mb-2 relative">
+              <div className="absolute w-full h-full rounded-full animate-spin border-2 border-transparent [border-top-color:theme(colors.brand.300)] [border-bottom-color:theme(colors.brand.100)]">
+                <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,transparent_0%,theme(colors.brand.300)_30%,theme(colors.brand.100)_70%,transparent_100%)] animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]">
+                  <div className="absolute inset-[3px] bg-brand-900 rounded-full" />
+                </div>
+              </div>
+            </div>
+            Loading your workspace...
           </div>
         </div>
       )}
@@ -325,9 +329,23 @@ const Editor: React.FC = () => {
           )}
 
           {isLoading && (
-            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-xl">
-              <div className="text-white text-center flex flex-col items-center">
-                <div className="w-10 h-10 border-4 border-t-brand-300 border-brand-100 rounded-full animate-spin mb-2" />
+            <div className="absolute inset-0 flex items-center justify-center rounded-xl overflow-hidden">
+              {/* Gradient background with animated shine */}
+              <div className="absolute inset-0 bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 animate-gradient-flow" />
+
+              {/* Overlay with subtle texture */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-brand-900/80 to-brand-900/30" />
+
+              {/* Content container */}
+              <div className="relative text-brand-100 text-center flex flex-col items-center z-10">
+                <div className="w-12 h-12 mb-2 relative">
+                  {/* Existing spinner with your brand colors */}
+                  <div className="absolute w-full h-full rounded-full animate-spin border-2 border-transparent [border-top-color:theme(colors.brand.300)] [border-bottom-color:theme(colors.brand.100)]">
+                    <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,transparent_0%,theme(colors.brand.300)_30%,theme(colors.brand.100)_70%,transparent_100%)] animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]">
+                      <div className="absolute inset-[3px] bg-brand-900 rounded-full" />
+                    </div>
+                  </div>
+                </div>
                 Processing image...
               </div>
             </div>
