@@ -313,7 +313,11 @@ const Editor: React.FC = () => {
               : "border border-brand-200"
           }`}
           ref={containerRef}
-          style={{ maxHeight: `calc(100vh - ${keyboardHeight + 100}px)` }}
+          style={{
+            maxHeight: `calc(100vh - ${
+              keyboardHeight + (isMobile ? 120 : 100)
+            }px)`,
+          }}
           onDragOver={(e) => {
             e.preventDefault();
             setIsDraggingOver(true);
@@ -374,7 +378,6 @@ const Editor: React.FC = () => {
               ))}
               <Transformer ref={trRef} enabled={!isMobile} />
             </Layer>
-
             <Layer>
               {bgRemovedImg && (
                 <KonvaImage
@@ -397,7 +400,6 @@ const Editor: React.FC = () => {
             onChange={handleFileInputChange}
           />
 
-          {/* Hidden input for mobile text editing */}
           {isMobile && (
             <input
               ref={textInputRef}
@@ -415,9 +417,7 @@ const Editor: React.FC = () => {
               <div className="text-center text-brand-500">
                 <ArrowUpTrayIcon className="w-12 h-12 mx-auto mb-2" />
                 <p className="text-base font-medium">
-                  {isDraggingOver
-                    ? "Drop image here"
-                    : "Click or drag to upload"}
+                  {isDraggingOver ? "Drop image here" : "Tap or drag to upload"}
                 </p>
               </div>
             </div>
@@ -425,16 +425,10 @@ const Editor: React.FC = () => {
 
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center rounded-xl overflow-hidden">
-              {/* Gradient background with animated shine */}
               <div className="absolute inset-0 bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 animate-gradient-flow" />
-
-              {/* Overlay with subtle texture */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-brand-900/80 to-brand-900/30" />
-
-              {/* Content container */}
               <div className="relative text-brand-100 text-center flex flex-col items-center z-10">
                 <div className="w-12 h-12 mb-2 relative">
-                  {/* Existing spinner with your brand colors */}
                   <div className="absolute w-full h-full rounded-full animate-spin border-2 border-transparent [border-top-color:theme(colors.brand.300)] [border-bottom-color:theme(colors.brand.100)]">
                     <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,transparent_0%,theme(colors.brand.300)_30%,theme(colors.brand.100)_70%,transparent_100%)] animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]">
                       <div className="absolute inset-[3px] bg-brand-900 rounded-full" />
@@ -459,7 +453,6 @@ const Editor: React.FC = () => {
               </div>
             )}
           </div>
-
           <button
             disabled={!bgRemovedImg}
             onClick={addText}
@@ -471,7 +464,6 @@ const Editor: React.FC = () => {
           >
             <PlusIcon className="w-5 h-5" /> Add Text
           </button>
-
           <div className="flex-1 overflow-y-auto space-y-6 mt-4">
             <TextList
               texts={texts}
@@ -479,7 +471,6 @@ const Editor: React.FC = () => {
               setSelectedTextId={setSelectedTextId}
               deleteText={deleteText}
             />
-
             {selectedText && (
               <TextControls
                 selectedText={selectedText}
@@ -515,11 +506,12 @@ const Editor: React.FC = () => {
       {/* Mobile Controls */}
       {isMobile && (
         <>
-          {/* Improved FAB with Icons */}
-          <div className="fixed bottom-16 right-4 flex flex-col items-end z-50">
+          {/* Floating Action Button (FAB) Menu */}
+          <div className="fixed bottom-20 right-4 flex flex-col items-end z-50">
             <button
               onClick={() => setShowFabMenu((prev) => !prev)}
-              className="p-4 bg-brand-500 text-white rounded-full shadow-lg transition-transform duration-300 hover:scale-110"
+              className="p-3 bg-brand-500 text-white rounded-full shadow-lg transition-all duration-300 hover:scale-105 focus:ring-2 focus:ring-brand-300"
+              aria-label="Toggle action menu"
             >
               {showFabMenu ? (
                 <XMarkIcon className="w-6 h-6" />
@@ -528,20 +520,21 @@ const Editor: React.FC = () => {
               )}
             </button>
             {showFabMenu && (
-              <div className="mt-2 flex flex-col gap-2 bg-white p-2 rounded-lg shadow-lg animate-[slideIn_0.2s_ease-out]">
+              <div className="mt-2 flex flex-col gap-2 bg-white p-3 rounded-xl shadow-xl animate-[fadeIn_0.2s_ease-out]">
                 <button
                   onClick={() => {
                     addText();
                     setShowFabMenu(false);
                   }}
                   disabled={!bgRemovedImg}
-                  className={`p-2 rounded-full ${
+                  className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${
                     bgRemovedImg
                       ? "bg-brand-500 text-white hover:bg-brand-600"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
                   }`}
+                  aria-label="Add text"
                 >
-                  <p className="w-6 h-6 font-bold"> T </p>
+                  <span className="font-bold text-lg">T</span>
                 </button>
                 <button
                   onClick={() => {
@@ -549,22 +542,24 @@ const Editor: React.FC = () => {
                     setShowFabMenu(false);
                   }}
                   disabled={!hasContent}
-                  className={`p-2 rounded-full ${
+                  className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${
                     hasContent
                       ? "bg-brand-700 text-white hover:bg-brand-800"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
                   }`}
+                  aria-label="Export image"
                 >
-                  <DocumentCheckIcon className="w-6 h-6" />
+                  <DocumentCheckIcon className="w-5 h-5" />
                 </button>
                 <button
                   onClick={async () => {
                     await db.clearState();
                     window.location.reload();
                   }}
-                  className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+                  className="p-2 rounded-full w-10 h-10 bg-red-500 text-white hover:bg-red-600 flex items-center justify-center"
+                  aria-label="Reset workspace"
                 >
-                  <TrashIcon className="w-6 h-6" />
+                  <TrashIcon className="w-5 h-5" />
                 </button>
               </div>
             )}
@@ -572,38 +567,64 @@ const Editor: React.FC = () => {
 
           {/* Selected Text Toolbar */}
           {selectedText && (
-            <div className="fixed top-16 left-4 right-4 bg-white p-2 rounded-lg shadow-lg flex justify-between items-center z-50">
-              <input
-                type="color"
-                value={selectedText.fill}
-                onChange={(e) =>
-                  updateTextProperty(selectedText.id, "fill", e.target.value)
-                }
-                className="w-8 h-8 p-0 border-none rounded-full"
-              />
-              <button
-                onClick={() => {
-                  deleteText(selectedText.id);
-                  setSelectedTextId(null);
-                }}
-                className="p-2 bg-red-600 text-white rounded-full"
-              >
-                <TrashIcon className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setSelectedTextId(null)}
-                className="p-2 text-brand-500"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
+            <div className="fixed top-14 left-2 right-2 bg-white p-3 rounded-xl shadow-lg flex items-center justify-between z-50 transition-all duration-200">
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={selectedText.fill}
+                  onChange={(e) =>
+                    updateTextProperty(selectedText.id, "fill", e.target.value)
+                  }
+                  className="w-10 h-10 p-0 border-none rounded-full cursor-pointer appearance-none overflow-hidden focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+                  aria-label="Text color"
+                  style={{
+                    WebkitAppearance: "none",
+                    MozAppearance: "none",
+                  }}
+                />
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={selectedText.opacity}
+                  onChange={(e) =>
+                    updateTextProperty(
+                      selectedText.id,
+                      "opacity",
+                      parseFloat(e.target.value)
+                    )
+                  }
+                  className="w-20 accent-brand-500"
+                  aria-label="Text opacity"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    deleteText(selectedText.id);
+                    setSelectedTextId(null);
+                  }}
+                  className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+                  aria-label="Delete text"
+                >
+                  <TrashIcon className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setSelectedTextId(null)}
+                  className="p-2 text-brand-500 hover:text-brand-600"
+                  aria-label="Close toolbar"
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           )}
-
-          {/* Scrollable Font Selector */}
+          {/* Font Selector */}
           {selectedText && (
             <div
-              className="fixed left-0 right-0 p-2 bg-white flex space-x-2 overflow-x-auto shadow-inner z-50"
-              style={{ bottom: `${keyboardHeight}px` }}
+              className="fixed left-0 right-0 bottom-0 p-2 bg-white flex space-x-3 overflow-x-auto shadow-lg z-50"
+              style={{ bottom: `${keyboardHeight}px`, maxHeight: "100px" }}
             >
               {FONTS.map((font) => (
                 <button
@@ -612,11 +633,11 @@ const Editor: React.FC = () => {
                     updateTextProperty(selectedText.id, "fontFamily", font)
                   }
                   style={{ fontFamily: font }}
-                  className={`px-3 py-2 border rounded whitespace-nowrap transition ${
+                  className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-all ${
                     selectedText.fontFamily === font
-                      ? "border-brand-500 border-2"
-                      : "border-gray-300"
-                  } hover:bg-brand-50`}
+                      ? "bg-brand-500 text-white"
+                      : "bg-gray-100 text-brand-700 hover:bg-brand-50"
+                  }`}
                 >
                   {font}
                 </button>
