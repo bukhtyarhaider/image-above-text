@@ -20,6 +20,7 @@ import {
   XMarkIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
+import { HexColorPicker } from "react-colorful";
 import WebFont from "webfontloader";
 import { FONTS } from "../constants/fonts";
 import logoImg from "/src/assets/logo.png";
@@ -42,6 +43,7 @@ const Editor: React.FC = () => {
   const [showFabMenu, setShowFabMenu] = useState(false);
   const [tempText, setTempText] = useState("");
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const stageSize = useStageSize(containerRef);
   const {
@@ -569,19 +571,32 @@ const Editor: React.FC = () => {
           {selectedText && (
             <div className="fixed top-14 left-2 right-2 bg-white p-3 rounded-xl shadow-lg flex items-center justify-between z-50 transition-all duration-200">
               <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={selectedText.fill}
-                  onChange={(e) =>
-                    updateTextProperty(selectedText.id, "fill", e.target.value)
-                  }
-                  className="w-10 h-10 p-0 border-none rounded-full cursor-pointer appearance-none overflow-hidden focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-                  aria-label="Text color"
-                  style={{
-                    WebkitAppearance: "none",
-                    MozAppearance: "none",
-                  }}
-                />
+                <div className="relative">
+                  <button
+                    onClick={() => setShowColorPicker((prev) => !prev)}
+                    className="w-8 h-8 rounded-full border border-brand-200 shadow-sm focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 transition-all hover:border-brand-400"
+                    style={{ backgroundColor: selectedText.fill }}
+                    aria-label="Open color picker"
+                  />
+                  {showColorPicker && (
+                    <div className="absolute top-12 left-0 z-50 bg-white p-4 rounded-lg shadow-xl border border-brand-200">
+                      <HexColorPicker
+                        color={selectedText.fill}
+                        onChange={(color: string | number) =>
+                          updateTextProperty(selectedText.id, "fill", color)
+                        }
+                        className="w-30"
+                      />
+                      <button
+                        onClick={() => setShowColorPicker(false)}
+                        className="mt-3 w-full text-brand-500 hover:text-brand-600 text-sm flex items-center justify-center gap-1 transition-all"
+                        aria-label="Close color picker"
+                      >
+                        <XMarkIcon className="w-4 h-4" /> Close
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <input
                   type="range"
                   min="0"
