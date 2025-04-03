@@ -85,6 +85,59 @@ export const useImageProcessing = (stageSize: {
     [stageSize]
   );
 
+  // Recalculate dimensions when stageSize changes
+  useEffect(() => {
+    if (!originalImg || !isHydrated) return;
+
+    const scale = Math.min(
+      stageSize.width / originalImg.width,
+      stageSize.height / originalImg.height,
+      1
+    );
+    const newOrigDims = processImageDimensions(originalImg, scale);
+    setOrigDims(newOrigDims);
+
+    if (bgRemovedImg) {
+      const newBgDims = processImageDimensions(bgRemovedImg, scale);
+      setBgDims(newBgDims);
+    }
+
+    setImgScale(scale);
+
+    // Persist updated state
+    const updateState = async () => {
+      try {
+        const originalBlob = originalImg.src
+          ? await fetch(originalImg.src).then((r) => r.blob())
+          : undefined;
+        const processedBlob = bgRemovedImg?.src
+          ? await fetch(bgRemovedImg.src).then((r) => r.blob())
+          : undefined;
+
+        await db.saveState({
+          originalImage: originalBlob ? { blob: originalBlob } : undefined,
+          processedImage: processedBlob ? { blob: processedBlob } : undefined,
+          texts: [], // Assuming texts are managed elsewhere
+          origDims: newOrigDims,
+          bgDims: bgRemovedImg
+            ? processImageDimensions(bgRemovedImg, scale)
+            : newOrigDims,
+          imgScale: scale,
+        });
+      } catch (error) {
+        console.error("Failed to update state on resize:", error);
+      }
+    };
+
+    updateState();
+  }, [
+    stageSize,
+    originalImg,
+    bgRemovedImg,
+    isHydrated,
+    processImageDimensions,
+  ]);
+
   const handleImageUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -109,7 +162,6 @@ export const useImageProcessing = (stageSize: {
         );
         const dims = processImageDimensions(img, scale);
 
-        // Save initial state
         const originalBlob = await fetch(url).then((r) => r.blob());
         await db.saveState({
           originalImage: { blob: originalBlob },
@@ -124,7 +176,6 @@ export const useImageProcessing = (stageSize: {
         setOrigDims(dims);
         setImgScale(scale);
 
-        // Process background removal
         const processedBlob = await removeBackground(originalBlob);
         const processedUrl = URL.createObjectURL(processedBlob);
         addObjectUrl(processedUrl);
@@ -137,7 +188,6 @@ export const useImageProcessing = (stageSize: {
 
         const processedDims = processImageDimensions(processedImg, scale);
 
-        // Save final state
         await db.saveState({
           originalImage: { blob: originalBlob },
           processedImage: { blob: processedBlob },
