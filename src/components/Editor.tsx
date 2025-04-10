@@ -312,7 +312,7 @@ const Editor: React.FC = () => {
           className={`flex-1 bg-white m-2 lg:m-4 rounded-xl shadow-lg p-4 relative overflow-y-auto transition-all duration-300 ${
             isDraggingOver
               ? "border-4 border-dashed border-brand-500"
-              : "border border-brand-200"
+              : "border border-brand-100"
           }`}
           ref={containerRef}
           style={{
@@ -512,13 +512,13 @@ const Editor: React.FC = () => {
           <div className="fixed bottom-20 right-4 flex flex-col items-end z-50">
             <button
               onClick={() => setShowFabMenu((prev) => !prev)}
-              className="p-3 bg-brand-500 text-white rounded-full shadow-lg transition-all duration-300 hover:scale-105 focus:ring-2 focus:ring-brand-300"
+              className="p-3 bg-brand-500 text-white rounded-full shadow-lg transition-all duration-600 hover:scale-105 focus:ring-2 focus:ring-brand-300"
               aria-label="Toggle action menu"
             >
               {showFabMenu ? (
-                <XMarkIcon className="w-6 h-6" />
+                <XMarkIcon className="w-8 h-8" />
               ) : (
-                <PlusIcon className="w-6 h-6" />
+                <PlusIcon className="w-8 h-8" />
               )}
             </button>
             {showFabMenu && (
