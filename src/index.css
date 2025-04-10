@@ -18,19 +18,22 @@ body,
   /* ---------- BRAND COLORS (from your logo) ---------- */
   /*
     Derived from the dark-to-light tones in the logo.
-    - brand-700: darkest (#0a1d2f)
-    - brand-700: dark (#0F2F45)
-    - brand-500: mid (#1F5770)
-    - brand-300: accent light (#3B7F9C)
-    - brand-100: mediam light (#ebeff2)
-    - brand-50: near-white highlight
+    - brand-900: deepest (#0a1d2f)
+    - brand-700: dark navy (#0f2f45)
+    - brand-500: symbolic turquoise (#227b8b)
+    - brand-400: bright turquoise (#38a4b2)
+    - brand-300: light ocean mist (#7ccfd8)
+    - brand-100: soft aqua tint (#eaf6f8)
+    - brand-50: whisper white (#f8fbfc)
   */
-  --color-brand-50: #f5f7fa;
-  --color-brand-100: #ebeff2;
-  --color-brand-300: #3b7f9c;
-  --color-brand-500: #1f5770;
-  --color-brand-700: #0f2f45;
-  --color-brand-900: #0a1d2f;
+
+  --color-brand-900: #0a1d2f; /* Deep Midnight */
+  --color-brand-700: #0f2f45; /* Ink Blue */
+  --color-brand-500: #227b8b; /* Symbolic Turquoise */
+  --color-brand-400: #38a4b2; /* Bright Turquoise */
+  --color-brand-300: #7ccfd8; /* Light Ocean Mist */
+  --color-brand-100: #eaf6f8; /* Soft Aqua Tint */
+  --color-brand-50: #f8fbfc; /* Whisper White */
 
   /* ---------- NEUTRAL / GRAYSCALE ---------- */
   --color-neutral-50: #f9fafb;
@@ -62,17 +65,17 @@ body,
 
   /* ---------- RADIUS ---------- */
   /* radius-* namespace drives rounded-sm, rounded-lg, etc. */
-  --radius-sm: 0.125rem;
-  --radius-md: 0.25rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
 
   /* ---------- SHADOWS ---------- */
   /* shadow-* namespace for box-shadow utilities like shadow-sm, shadow-lg, etc. */
   --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.05);
   --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1),
-    0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(10, 29, 47, 0.15),
+    0 4px 6px -4px rgba(10, 29, 47, 0.1);
 
   /* ---------- CUSTOM EASING ---------- */
   /* ease-* namespace for transition timing utilities like ease-brand */
@@ -98,6 +101,15 @@ body,
       transform: translateY(0);
     }
   }
+}
+
+.bg-turquoise-gradient {
+  background: linear-gradient(
+    145deg,
+    var(--color-brand-100),
+    var(--color-brand-300),
+    var(--color-brand-500)
+  );
 }
 
 .animate-slide-up {

@@ -301,9 +301,9 @@ const Editor: React.FC = () => {
         </div>
       )}
 
-      <header className="lg:hidden flex items-center justify-between p-4 bg-brand-700 text-white shrink-0">
+      <header className="flex items-center justify-between p-4 bg-brand-500 text-white shrink-0">
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <img src={logoImg} className="h-8" alt="Logo" /> Image Above Text
+          <img src={logoImg} className="h-8" alt="Logo" /> Turquoise
         </h2>
       </header>
 
@@ -312,7 +312,7 @@ const Editor: React.FC = () => {
           className={`flex-1 bg-white m-2 lg:m-4 rounded-xl shadow-lg p-4 relative overflow-y-auto transition-all duration-300 ${
             isDraggingOver
               ? "border-4 border-dashed border-brand-500"
-              : "border border-brand-200"
+              : "border border-brand-100"
           }`}
           ref={containerRef}
           style={{
@@ -426,10 +426,10 @@ const Editor: React.FC = () => {
           )}
 
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-xl overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 animate-gradient-flow" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-brand-900/80 to-brand-900/30" />
-              <div className="relative text-brand-100 text-center flex flex-col items-center z-10">
+            <div className=" absolute inset-0 flex items-center justify-center rounded-xl overflow-hidden">
+              <div className="absolute inset-0  bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 animate-gradient-flow" />
+              <div className="absolute inset-0 bg-turquoise-gradient bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-brand-900/80 to-brand-900/30" />
+              <div className="relative  text-brand-700 text-center flex flex-col items-center z-10">
                 <div className="w-12 h-12 mb-2 relative">
                   <div className="absolute w-full h-full rounded-full animate-spin border-2 border-transparent [border-top-color:theme(colors.brand.300)] [border-bottom-color:theme(colors.brand.100)]">
                     <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,transparent_0%,theme(colors.brand.300)_30%,theme(colors.brand.100)_70%,transparent_100%)] animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]">
@@ -512,13 +512,13 @@ const Editor: React.FC = () => {
           <div className="fixed bottom-20 right-4 flex flex-col items-end z-50">
             <button
               onClick={() => setShowFabMenu((prev) => !prev)}
-              className="p-3 bg-brand-500 text-white rounded-full shadow-lg transition-all duration-300 hover:scale-105 focus:ring-2 focus:ring-brand-300"
+              className="p-3 bg-brand-500 text-white rounded-full shadow-lg transition-all duration-600 hover:scale-105 focus:ring-2 focus:ring-brand-300"
               aria-label="Toggle action menu"
             >
               {showFabMenu ? (
-                <XMarkIcon className="w-6 h-6" />
+                <XMarkIcon className="w-8 h-8" />
               ) : (
-                <PlusIcon className="w-6 h-6" />
+                <PlusIcon className="w-8 h-8" />
               )}
             </button>
             {showFabMenu && (
