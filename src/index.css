@@ -18,13 +18,15 @@ body,
   /* ---------- BRAND COLORS (from your logo) ---------- */
   /*
     Derived from the dark-to-light tones in the logo.
-    - brand-700: darkest (#0a1d2f)
-    - brand-700: dark (#0F2F45)
-    - brand-500: mid (#1F5770)
-    - brand-300: accent light (#3B7F9C)
-    - brand-100: mediam light (#ebeff2)
-    - brand-50: near-white highlight
+    - brand-900: deepest (#0a1d2f)
+    - brand-700: dark navy (#0f2f45)
+    - brand-500: symbolic turquoise (#227b8b)
+    - brand-400: bright turquoise (#38a4b2)
+    - brand-300: light ocean mist (#7ccfd8)
+    - brand-100: soft aqua tint (#eaf6f8)
+    - brand-50: whisper white (#f8fbfc)
   */
+
   --color-brand-900: #0a1d2f; /* Deep Midnight */
   --color-brand-700: #0f2f45; /* Ink Blue */
   --color-brand-500: #227b8b; /* Symbolic Turquoise */
