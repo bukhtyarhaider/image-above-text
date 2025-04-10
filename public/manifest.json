@@ -1,6 +1,6 @@
 {
-    "short_name": "ImageTextEditor",
-    "name": "Image Above Text Editor",
+    "short_name": "Turquoise",
+    "name": "Turquoise Editor",
     "icons": [
       {
         "src": "/src/assets/icon-192x192.png",
@@ -15,6 +15,6 @@
     ],
     "start_url": "/",
     "display": "standalone",
-    "theme_color": "#4F46E5",
+    "theme_color": "#227b8b",
     "background_color": "#F9FAFB"
   }
