@@ -44,6 +44,7 @@ const Editor: React.FC = () => {
   const [tempText, setTempText] = useState("");
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [controlsPosition, setControlsPosition] = useState({ x: 0, y: 0 });
 
   const stageSize = useStageSize(containerRef);
   const {
@@ -67,6 +68,13 @@ const Editor: React.FC = () => {
     handleDragEnd,
     handleTransformEnd,
   } = useTextManagement(stageSize);
+
+  // Load all fonts on mount to ensure availability on mobile
+  useEffect(() => {
+    WebFont.load({
+      google: { families: FONTS },
+    });
+  }, []);
 
   // Handle window resize
   useEffect(() => {
@@ -187,28 +195,82 @@ const Editor: React.FC = () => {
     }
   }, [selectedTextId, stageSize, texts]);
 
+  // Update controls position when text is selected
   useEffect(() => {
-    WebFont.load({
-      google: {
-        families: FONTS.filter(
-          (font) =>
-            ![
-              "Arial",
-              "Helvetica",
-              "Times New Roman",
-              "Courier New",
-              "Georgia",
-              "Verdana",
-            ].includes(font)
-        ),
-      },
-    });
-  }, []);
+    if (
+      selectedTextId &&
+      textRefs.current[selectedTextId] &&
+      stageRef.current
+    ) {
+      const node = textRefs.current[selectedTextId];
+      const stage = stageRef.current;
+      const stageRect = stage.container().getBoundingClientRect();
+
+      const textRect = node.getClientRect();
+      const newX = Math.min(
+        textRect.x - stageRect.left + textRect.width + 10 / 2,
+        stageSize.width - 320
+      );
+      const newY = Math.max(textRect.y + 30, 10);
+
+      setControlsPosition({
+        x: stageRect.left + newX,
+        y: stageRect.top + newY,
+      });
+    }
+  }, [selectedTextId, texts, stageSize]);
+
+  // Handle arrow key navigation for text selection
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedTextId || texts.length <= 1 || isMobile) return;
+
+      const currentIndex = texts.findIndex((t) => t.id === selectedTextId);
+      let newIndex: number;
+
+      if (e.key === "ArrowUp") {
+        newIndex = currentIndex > 0 ? currentIndex - 1 : texts.length - 1;
+        e.preventDefault();
+      } else if (e.key === "ArrowDown") {
+        newIndex = currentIndex < texts.length - 1 ? currentIndex + 1 : 0;
+        e.preventDefault();
+      } else {
+        return;
+      }
+
+      setSelectedTextId(texts[newIndex].id);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedTextId, texts, setSelectedTextId, isMobile]);
+
+  // Handle canvas click to deselect text
+  const handleCanvasClick = useCallback(
+    (e: Konva.KonvaEventObject<MouseEvent>) => {
+      if (isMobile) return;
+
+      const stage = e.target.getStage();
+      if (!stage) return;
+
+      const target = e.target;
+      const isText = target instanceof Konva.Text;
+      const transformer = trRef.current;
+      const isTransformerChild =
+        transformer && transformer.getChildren().includes(target);
+      const isLayer = target instanceof Konva.Layer;
+      const isStage = target === stage;
+
+      if ((isStage || isLayer) && !isText && !isTransformerChild) {
+        setSelectedTextId(null);
+      }
+    },
+    [isMobile, setSelectedTextId]
+  );
 
   const handleSave = useCallback(() => {
     if (!stageRef.current) return;
 
-    // Hide transformer before export
     trRef.current?.visible(false);
     trRef.current?.getLayer()?.batchDraw();
 
@@ -221,7 +283,6 @@ const Editor: React.FC = () => {
       pixelRatio,
     });
 
-    // Show transformer again after export
     trRef.current?.visible(true);
     trRef.current?.getLayer()?.batchDraw();
 
@@ -260,7 +321,7 @@ const Editor: React.FC = () => {
     if (isMobile && textInputRef.current) {
       const selectedText = texts.find((t) => t.id === textId);
       setTempText(selectedText?.text || "");
-      textInputRef.current.focus(); // Force focus on every tap
+      textInputRef.current.focus();
     }
   };
 
@@ -278,6 +339,60 @@ const Editor: React.FC = () => {
 
   const hasContent = !!bgRemovedImg && texts.length > 0;
   const selectedText = texts.find((text) => text.id === selectedTextId) || null;
+
+  const desktopSidebar = (
+    <div className="hidden lg:block w-96 bg-white m-4 rounded-xl shadow-lg p-6 flex flex-col gap-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold text-brand-700">Editor Controls</h2>
+        {storageStatus && (
+          <div className="text-xs text-brand-500">
+            Storage: {(storageStatus.usage / 1024 / 1024).toFixed(1)}MB used
+          </div>
+        )}
+      </div>
+      <button
+        disabled={!bgRemovedImg}
+        onClick={addText}
+        className={`w-full py-3 flex items-center justify-center gap-2 text-white font-semibold rounded-lg transition-all ${
+          bgRemovedImg
+            ? "bg-brand-500 hover:bg-brand-600"
+            : "bg-gray-300 cursor-not-allowed"
+        }`}
+      >
+        <PlusIcon className="w-5 h-5" /> Add Text
+      </button>
+      <div className="flex-1 overflow-y-auto space-y-6 mt-4">
+        <TextList
+          texts={texts}
+          selectedTextId={selectedTextId}
+          setSelectedTextId={setSelectedTextId}
+          deleteText={deleteText}
+        />
+      </div>
+      <div className="space-y-4 mt-4">
+        <button
+          onClick={handleSave}
+          disabled={!hasContent}
+          className={`w-full py-3 flex items-center justify-center gap-2 text-white font-semibold rounded-lg transition-all ${
+            hasContent
+              ? "bg-brand-700 hover:bg-brand-800"
+              : "bg-gray-300 cursor-not-allowed"
+          }`}
+        >
+          <DocumentCheckIcon className="w-5 h-5" /> Export Image
+        </button>
+        <button
+          onClick={async () => {
+            await db.clearState();
+            window.location.reload();
+          }}
+          className="w-full py-2 flex items-center justify-center gap-2 text-red-500 hover:text-red-700 text-sm"
+        >
+          <TrashIcon className="w-4 h-4" /> Reset Workspace
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="h-screen w-screen flex flex-col bg-gradient-to-br from-brand-50 to-brand-100 overflow-hidden">
@@ -340,6 +455,7 @@ const Editor: React.FC = () => {
               if (!originalImg && !isLoading && e.target === e.currentTarget) {
                 fileInputRef.current?.click();
               }
+              handleCanvasClick(e);
             }}
           >
             <Layer>
@@ -350,6 +466,7 @@ const Editor: React.FC = () => {
                   y={origDims.y}
                   width={origDims.width}
                   height={origDims.height}
+                  listening={false}
                 />
               )}
             </Layer>
@@ -368,8 +485,11 @@ const Editor: React.FC = () => {
                   ref={(node) => {
                     if (node) textRefs.current[text.id] = node;
                   }}
-                  onClick={() => {
-                    if (!isMobile) setSelectedTextId(text.id);
+                  onClick={(e) => {
+                    if (!isMobile) {
+                      e.cancelBubble = true;
+                      setSelectedTextId(text.id);
+                    }
                   }}
                   onTap={() => handleTextTap(text.id)}
                   onDragEnd={(e) => handleDragEnd(e, text.id)}
@@ -426,10 +546,10 @@ const Editor: React.FC = () => {
           )}
 
           {isLoading && (
-            <div className=" absolute inset-0 flex items-center justify-center rounded-xl overflow-hidden">
-              <div className="absolute inset-0  bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 animate-gradient-flow" />
+            <div className="absolute inset-0 flex items-center justify-center rounded-xl overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 animate-gradient-flow" />
               <div className="absolute inset-0 bg-turquoise-gradient bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-brand-900/80 to-brand-900/30" />
-              <div className="relative  text-brand-700 text-center flex flex-col items-center z-10">
+              <div className="relative text-brand-700 text-center flex flex-col items-center z-10">
                 <div className="w-12 h-12 mb-2 relative">
                   <div className="absolute w-full h-full rounded-full animate-spin border-2 border-transparent [border-top-color:theme(colors.brand.300)] [border-bottom-color:theme(colors.brand.100)]">
                     <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,transparent_0%,theme(colors.brand.300)_30%,theme(colors.brand.100)_70%,transparent_100%)] animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]">
@@ -441,226 +561,172 @@ const Editor: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
 
-        {/* Desktop Sidebar */}
-        <div className="hidden lg:block w-96 bg-white m-4 rounded-xl shadow-lg p-6 flex flex-col gap-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-brand-700">
-              Editor Controls
-            </h2>
-            {storageStatus && (
-              <div className="text-xs text-brand-500">
-                Storage: {(storageStatus.usage / 1024 / 1024).toFixed(1)}MB used
-              </div>
-            )}
-          </div>
-          <button
-            disabled={!bgRemovedImg}
-            onClick={addText}
-            className={`w-full py-3 flex items-center justify-center gap-2 text-white font-semibold rounded-lg transition-all ${
-              bgRemovedImg
-                ? "bg-brand-500 hover:bg-brand-600"
-                : "bg-gray-300 cursor-not-allowed"
-            }`}
-          >
-            <PlusIcon className="w-5 h-5" /> Add Text
-          </button>
-          <div className="flex-1 overflow-y-auto space-y-6 mt-4">
-            <TextList
-              texts={texts}
-              selectedTextId={selectedTextId}
-              setSelectedTextId={setSelectedTextId}
-              deleteText={deleteText}
+          {!isMobile && selectedText && (
+            <TextControls
+              selectedText={selectedText}
+              updateTextProperty={updateTextProperty}
+              position={controlsPosition}
             />
-            {selectedText && (
-              <TextControls
-                selectedText={selectedText}
-                updateTextProperty={updateTextProperty}
-              />
-            )}
-          </div>
-          <div className="space-y-4 mt-4">
-            <button
-              onClick={handleSave}
-              disabled={!hasContent}
-              className={`w-full py-3 flex items-center justify-center gap-2 text-white font-semibold rounded-lg transition-all ${
-                hasContent
-                  ? "bg-brand-700 hover:bg-brand-800"
-                  : "bg-gray-300 cursor-not-allowed"
-              }`}
-            >
-              <DocumentCheckIcon className="w-5 h-5" /> Export Image
-            </button>
-            <button
-              onClick={async () => {
-                await db.clearState();
-                window.location.reload();
-              }}
-              className="w-full py-2 flex items-center justify-center gap-2 text-red-500 hover:text-red-700 text-sm"
-            >
-              <TrashIcon className="w-4 h-4" /> Reset Workspace
-            </button>
-          </div>
+          )}
         </div>
-      </div>
 
-      {/* Mobile Controls */}
-      {isMobile && (
-        <>
-          {/* Floating Action Button (FAB) Menu */}
-          <div className="fixed bottom-20 right-4 flex flex-col items-end z-50">
-            <button
-              onClick={() => setShowFabMenu((prev) => !prev)}
-              className="p-3 bg-brand-500 text-white rounded-full shadow-lg transition-all duration-600 hover:scale-105 focus:ring-2 focus:ring-brand-300"
-              aria-label="Toggle action menu"
-            >
-              {showFabMenu ? (
-                <XMarkIcon className="w-8 h-8" />
-              ) : (
-                <PlusIcon className="w-8 h-8" />
+        {desktopSidebar}
+
+        {isMobile && (
+          <>
+            <div className="fixed bottom-20 right-4 flex flex-col items-end z-50">
+              <button
+                onClick={() => setShowFabMenu((prev) => !prev)}
+                className="p-3 bg-brand-500 text-white rounded-full shadow-lg transition-all duration-600 hover:scale-105 focus:ring-2 focus:ring-brand-300"
+                aria-label="Toggle action menu"
+              >
+                {showFabMenu ? (
+                  <XMarkIcon className="w-8 h-8" />
+                ) : (
+                  <PlusIcon className="w-8 h-8" />
+                )}
+              </button>
+              {showFabMenu && (
+                <div className="mt-2 flex flex-col gap-2 bg-white p-3 rounded-xl shadow-xl animate-[fadeIn_0.2s_ease-out]">
+                  <button
+                    onClick={() => {
+                      addText();
+                      setShowFabMenu(false);
+                    }}
+                    disabled={!bgRemovedImg}
+                    className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${
+                      bgRemovedImg
+                        ? "bg-brand-500 text-white hover:bg-brand-600"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
+                    aria-label="Add text"
+                  >
+                    <span className="font-bold text-lg">T</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleSave();
+                      setShowFabMenu(false);
+                    }}
+                    disabled={!hasContent}
+                    className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${
+                      hasContent
+                        ? "bg-brand-700 text-white hover:bg-brand-800"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
+                    aria-label="Export image"
+                  >
+                    <DocumentCheckIcon className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await db.clearState();
+                      window.location.reload();
+                    }}
+                    className="p-2 rounded-full w-10 h-10 bg-red-500 text-white hover:bg-red-600 flex items-center justify-center"
+                    aria-label="Reset workspace"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                </div>
               )}
-            </button>
-            {showFabMenu && (
-              <div className="mt-2 flex flex-col gap-2 bg-white p-3 rounded-xl shadow-xl animate-[fadeIn_0.2s_ease-out]">
-                <button
-                  onClick={() => {
-                    addText();
-                    setShowFabMenu(false);
-                  }}
-                  disabled={!bgRemovedImg}
-                  className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${
-                    bgRemovedImg
-                      ? "bg-brand-500 text-white hover:bg-brand-600"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  }`}
-                  aria-label="Add text"
-                >
-                  <span className="font-bold text-lg">T</span>
-                </button>
-                <button
-                  onClick={() => {
-                    handleSave();
-                    setShowFabMenu(false);
-                  }}
-                  disabled={!hasContent}
-                  className={`p-2 rounded-full w-10 h-10 flex items-center justify-center ${
-                    hasContent
-                      ? "bg-brand-700 text-white hover:bg-brand-800"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  }`}
-                  aria-label="Export image"
-                >
-                  <DocumentCheckIcon className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={async () => {
-                    await db.clearState();
-                    window.location.reload();
-                  }}
-                  className="p-2 rounded-full w-10 h-10 bg-red-500 text-white hover:bg-red-600 flex items-center justify-center"
-                  aria-label="Reset workspace"
-                >
-                  <TrashIcon className="w-5 h-5" />
-                </button>
+            </div>
+
+            {selectedText && (
+              <div className="fixed top-14 left-2 right-2 bg-white p-3 rounded-xl shadow-lg flex items-center justify-between z-50 transition-all duration-200">
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowColorPicker((prev) => !prev)}
+                      className="w-8 h-8 rounded-full border border-brand-200 shadow-sm focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 transition-all hover:border-brand-400"
+                      style={{ backgroundColor: selectedText.fill }}
+                      aria-label="Open color picker"
+                    />
+                    {showColorPicker && (
+                      <div className="absolute top-12 left-0 z-50 bg-white p-4 rounded-lg shadow-xl border border-brand-200">
+                        <HexColorPicker
+                          color={selectedText.fill}
+                          onChange={(color: string | number) =>
+                            updateTextProperty(selectedText.id, "fill", color)
+                          }
+                          className="w-30"
+                        />
+                        <button
+                          onClick={() => setShowColorPicker(false)}
+                          className="mt-3 w-full text-brand-500 hover:text-brand-600 text-sm flex items-center justify-center gap-1 transition-all"
+                          aria-label="Close color picker"
+                        >
+                          <XMarkIcon className="w-4 h-4" /> Close
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={selectedText.opacity}
+                    onChange={(e) =>
+                      updateTextProperty(
+                        selectedText.id,
+                        "opacity",
+                        parseFloat(e.target.value)
+                      )
+                    }
+                    className="w-20 accent-brand-500"
+                    aria-label="Text opacity"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      deleteText(selectedText.id);
+                      setSelectedTextId(null);
+                    }}
+                    className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+                    aria-label="Delete text"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => setSelectedTextId(null)}
+                    className="p-2 text-brand-500 hover:text-brand-600"
+                    aria-label="Close toolbar"
+                  >
+                    <XMarkIcon className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             )}
-          </div>
 
-          {/* Selected Text Toolbar */}
-          {selectedText && (
-            <div className="fixed top-14 left-2 right-2 bg-white p-3 rounded-xl shadow-lg flex items-center justify-between z-50 transition-all duration-200">
-              <div className="flex items-center gap-2">
-                <div className="relative">
+            {selectedText && (
+              <div
+                className="fixed left-0 right-0 bottom-0 p-2 bg-white flex space-x-3 overflow-x-auto shadow-lg z-50"
+                style={{ bottom: `${keyboardHeight}px`, maxHeight: "100px" }}
+              >
+                {FONTS.map((font, index) => (
                   <button
-                    onClick={() => setShowColorPicker((prev) => !prev)}
-                    className="w-8 h-8 rounded-full border border-brand-200 shadow-sm focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 transition-all hover:border-brand-400"
-                    style={{ backgroundColor: selectedText.fill }}
-                    aria-label="Open color picker"
-                  />
-                  {showColorPicker && (
-                    <div className="absolute top-12 left-0 z-50 bg-white p-4 rounded-lg shadow-xl border border-brand-200">
-                      <HexColorPicker
-                        color={selectedText.fill}
-                        onChange={(color: string | number) =>
-                          updateTextProperty(selectedText.id, "fill", color)
-                        }
-                        className="w-30"
-                      />
-                      <button
-                        onClick={() => setShowColorPicker(false)}
-                        className="mt-3 w-full text-brand-500 hover:text-brand-600 text-sm flex items-center justify-center gap-1 transition-all"
-                        aria-label="Close color picker"
-                      >
-                        <XMarkIcon className="w-4 h-4" /> Close
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={selectedText.opacity}
-                  onChange={(e) =>
-                    updateTextProperty(
-                      selectedText.id,
-                      "opacity",
-                      parseFloat(e.target.value)
-                    )
-                  }
-                  className="w-20 accent-brand-500"
-                  aria-label="Text opacity"
-                />
+                    key={`${font}-${index}`}
+                    onClick={() =>
+                      updateTextProperty(selectedText.id, "fontFamily", font)
+                    }
+                    style={{ fontFamily: font }}
+                    className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-all ${
+                      selectedText.fontFamily === font
+                        ? "bg-brand-500 text-white"
+                        : "bg-gray-100 text-brand-700 hover:bg-brand-50"
+                    }`}
+                  >
+                    {font}
+                  </button>
+                ))}
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    deleteText(selectedText.id);
-                    setSelectedTextId(null);
-                  }}
-                  className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
-                  aria-label="Delete text"
-                >
-                  <TrashIcon className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setSelectedTextId(null)}
-                  className="p-2 text-brand-500 hover:text-brand-600"
-                  aria-label="Close toolbar"
-                >
-                  <XMarkIcon className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          )}
-          {/* Font Selector */}
-          {selectedText && (
-            <div
-              className="fixed left-0 right-0 bottom-0 p-2 bg-white flex space-x-3 overflow-x-auto shadow-lg z-50"
-              style={{ bottom: `${keyboardHeight}px`, maxHeight: "100px" }}
-            >
-              {FONTS.map((font) => (
-                <button
-                  key={font}
-                  onClick={() =>
-                    updateTextProperty(selectedText.id, "fontFamily", font)
-                  }
-                  style={{ fontFamily: font }}
-                  className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-all ${
-                    selectedText.fontFamily === font
-                      ? "bg-brand-500 text-white"
-                      : "bg-gray-100 text-brand-700 hover:bg-brand-50"
-                  }`}
-                >
-                  {font}
-                </button>
-              ))}
-            </div>
-          )}
-        </>
-      )}
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

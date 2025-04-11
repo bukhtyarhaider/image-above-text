@@ -1,3 +1,26 @@
+export const FAVORITE_FONTS = [
+  "Pacifico",
+  "Bangers",
+  "Luckiest Guy",
+  "Indie Flower",
+  "Fredoka One",
+  "Dancing Script",
+  "Lobster",
+  "Righteous",
+  "Bebas Neue",
+  "Anton",
+  "Permanent Marker",
+  "Rock Salt",
+  "Sacramento",
+  "Great Vibes",
+  "Satisfy",
+  "Kaushan Script",
+  "Bree Serif",
+  "Playfair Display",
+  "Cinzel",
+  "Cinzel Decorative",
+];
+
 export const FONTS = [
   "Inter",
   "Playfair Display",
