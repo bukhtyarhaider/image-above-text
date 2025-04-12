@@ -25,6 +25,7 @@ import WebFont from "webfontloader";
 import { FONTS } from "../constants/fonts";
 import logoImg from "/src/assets/logo.png";
 import { db } from "../lib/db";
+import ExportPopup from "./ExportPopup";
 
 const Editor: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,6 +46,7 @@ const Editor: React.FC = () => {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [controlsPosition, setControlsPosition] = useState({ x: 0, y: 0 });
+  const [showExportPopup, setShowExportPopup] = useState(false);
 
   const stageSize = useStageSize(containerRef);
   const {
@@ -292,6 +294,12 @@ const Editor: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    setShowExportPopup(true);
+
+    setTimeout(() => {
+      setShowExportPopup(false);
+    }, 5000);
   }, [imgScale, origDims]);
 
   const handleFileDrop = useCallback(
@@ -415,6 +423,12 @@ const Editor: React.FC = () => {
           Offline mode - some features may be limited
         </div>
       )}
+
+      <ExportPopup
+        isOpen={showExportPopup}
+        isMobile={isMobile}
+        onClose={() => setShowExportPopup(false)}
+      />
 
       <header className="flex items-center justify-between p-4 bg-brand-500 text-white shrink-0">
         <h2 className="text-xl font-bold flex items-center gap-2">

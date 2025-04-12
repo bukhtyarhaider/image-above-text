@@ -10,12 +10,9 @@ body,
   overflow: hidden;
 }
 
-/* 
-   Replace the default theme entirely (optional) 
-   by setting --*: initial 
-*/
+/* Custom theme */
 @theme {
-  /* ---------- BRAND COLORS (from your logo) ---------- */
+  /* ---------- BRAND COLORS ---------- */
   /*
     Derived from the dark-to-light tones in the logo.
     - brand-900: deepest (#0a1d2f)
@@ -40,12 +37,10 @@ body,
   --color-neutral-900: #111827;
 
   /* ---------- FONTS ---------- */
-  /* font-* namespace drives font-family utility classes like font-body */
   --font-body: "Inter", sans-serif;
   --font-display: "Satoshi", sans-serif;
 
   /* ---------- SPACING ---------- */
-  /* spacing-* namespace drives p-1, p-2, etc. */
   --spacing-1: 0.25rem;
   --spacing-2: 0.5rem;
   --spacing-3: 0.75rem;
@@ -56,7 +51,6 @@ body,
   --spacing-12: 3rem;
 
   /* ---------- BREAKPOINTS ---------- */
-  /* breakpoint-* namespace drives sm:*, md:*, lg:*, etc. */
   --breakpoint-sm: 36rem; /* 576px */
   --breakpoint-md: 48rem; /* 768px */
   --breakpoint-lg: 64rem; /* 1024px */
@@ -64,25 +58,34 @@ body,
   --breakpoint-2xl: 90rem; /* 1440px */
 
   /* ---------- RADIUS ---------- */
-  /* radius-* namespace drives rounded-sm, rounded-lg, etc. */
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 1rem;
   --radius-xl: 1.5rem;
 
   /* ---------- SHADOWS ---------- */
-  /* shadow-* namespace for box-shadow utilities like shadow-sm, shadow-lg, etc. */
   --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.05);
   --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(10, 29, 47, 0.15),
     0 4px 6px -4px rgba(10, 29, 47, 0.1);
 
   /* ---------- CUSTOM EASING ---------- */
-  /* ease-* namespace for transition timing utilities like ease-brand */
   --ease-brand: cubic-bezier(0.2, 0, 0, 1);
 
+  /* ---------- BACKGROUND OPACITY ---------- */
+  --bg-opacity-0: 0;
+  --bg-opacity-10: 0.1;
+  --bg-opacity-20: 0.2;
+  --bg-opacity-30: 0.3;
+  --bg-opacity-40: 0.4;
+  --bg-opacity-50: 0.5;
+  --bg-opacity-60: 0.6;
+  --bg-opacity-70: 0.7;
+  --bg-opacity-80: 0.8;
+  --bg-opacity-90: 0.9;
+  --bg-opacity-100: 1;
+
   /* ---------- CUSTOM ANIMATION ---------- */
-  /* animate-* namespace for custom animations (example: animate-fade) */
   --animate-fade: fade 0.4s var(--ease-brand);
   @keyframes fade {
     0% {
@@ -99,6 +102,17 @@ body,
     }
     to {
       transform: translateY(0);
+    }
+  }
+  /* Fade-in animation for popup */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
     }
   }
 }
@@ -185,4 +199,9 @@ body,
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Explicitly define fadeIn animation utility */
+.animate-\[fadeIn_0\.3s_ease-out\] {
+  animation: fadeIn 0.3s ease-out;
 }
