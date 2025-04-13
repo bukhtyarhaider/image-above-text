@@ -1,8 +1,11 @@
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth, AuthProvider } from "./context/AuthContext";
+import AuthPage from "./pages/AuthPage";
 import Editor from "./components/Editor";
-import AuthPage from "./components/AuthPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 
-function App() {
+const App = () => {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -21,13 +24,26 @@ function App() {
     );
   }
 
-  return user ? <Editor /> : <AuthPage />;
-}
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={user ? <Navigate to="/editor" /> : <AuthPage />}
+      />
+      <Route path="/editor" element={user ? <Editor /> : <Navigate to="/" />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
+};
 
 export default function Root() {
   return (
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
