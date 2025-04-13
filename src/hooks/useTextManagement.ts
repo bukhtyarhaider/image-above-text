@@ -46,8 +46,8 @@ export const useTextManagement = (stageSize: {
     const newText: TextProperties = {
       id: `text-${Date.now()}`,
       text: "New Text",
-      x: stageSize.width / 6,
-      y: stageSize.height / 6,
+      x: stageSize.width / 2.5,
+      y: stageSize.height / 8,
       fontSize: 24,
       fontFamily: "Arial",
       fill: "#000000",
