@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeftEndOnRectangleIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../context/AuthContext";
 import logoImg from "/src/assets/logo.png";
@@ -7,6 +7,19 @@ import { generateFallbackAvatar } from "../utils";
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        event.target instanceof Node &&
+        !document.querySelector(".group")?.contains(event.target)
+      ) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <header className="flex items-center justify-between p-2 px-6 bg-brand-500 text-white shrink-0 shadow-md">
@@ -38,7 +51,7 @@ const Header: React.FC = () => {
               />
             </button>
             {isProfileOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 z-50 border border-brand-100">
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 z-50 border border-brand-100 animate-[fadeIn_0.2s_ease-out]">
                 <div className="px-4 py-2 text-sm text-brand-700 border-b border-brand-100">
                   {user.displayName || "User"}
                 </div>
