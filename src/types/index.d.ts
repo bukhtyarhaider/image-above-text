@@ -1,3 +1,11 @@
+declare module "colorthief" {
+  export type RGB = [number, number, number];
+
+  export default class ColorThief {
+    getPalette(image: HTMLImageElement, colorCount?: number): RGB[];
+  }
+}
+
 interface TextProperties {
   id: string;
   text: string;

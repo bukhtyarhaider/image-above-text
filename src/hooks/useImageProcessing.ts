@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { removeBackground } from "@imgly/background-removal";
 import { db } from "../lib/db";
+import ColorThief from "colorthief";
 
 export const useImageProcessing = (stageSize: {
   width: number;
@@ -17,6 +18,7 @@ export const useImageProcessing = (stageSize: {
   const [isHydrated, setIsHydrated] = useState(false);
   const [objectUrls, setObjectUrls] = useState<string[]>([]);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [colorPalette, setColorPalette] = useState<string[]>([]);
 
   // Cleanup object URLs
   useEffect(() => {
@@ -54,13 +56,44 @@ export const useImageProcessing = (stageSize: {
           setOrigDims(state.origDims);
         }
 
-        // Load processed image
+        // Load processed image and extract colors
         const processedImg = await loadImageFromBlob(
           state.processedImage?.blob
         );
         if (processedImg) {
           setBgRemovedImg(processedImg);
           setBgDims(state.bgDims);
+
+          // Extract colors from processed image
+          const colorThief = new ColorThief();
+          const palette = await new Promise<string[]>((resolve) => {
+            if (processedImg.complete) {
+              const colors = colorThief
+                .getPalette(processedImg, 9)
+                .map(
+                  ([r, g, b]) =>
+                    `#${((1 << 24) + (r << 16) + (g << 8) + b)
+                      .toString(16)
+                      .slice(1)}`
+                );
+              resolve(colors);
+            } else {
+              processedImg.onload = () => {
+                const colors = colorThief
+                  .getPalette(processedImg, 9)
+                  .map(
+                    ([r, g, b]) =>
+                      `#${((1 << 24) + (r << 16) + (g << 8) + b)
+                        .toString(16)
+                        .slice(1)}`
+                  );
+                resolve(colors);
+              };
+            }
+          });
+          setColorPalette(palette);
+        } else {
+          setColorPalette([]);
         }
 
         setImgScale(state.imgScale);
@@ -117,7 +150,7 @@ export const useImageProcessing = (stageSize: {
         await db.saveState({
           originalImage: originalBlob ? { blob: originalBlob } : undefined,
           processedImage: processedBlob ? { blob: processedBlob } : undefined,
-          texts: [], // Assuming texts are managed elsewhere
+          texts: [],
           origDims: newOrigDims,
           bgDims: bgRemovedImg
             ? processImageDimensions(bgRemovedImg, scale)
@@ -186,6 +219,35 @@ export const useImageProcessing = (stageSize: {
           img.onload = () => resolve(img);
         });
 
+        // Extract color palette from processed image
+        const colorThief = new ColorThief();
+        const palette = await new Promise<string[]>((resolve) => {
+          if (processedImg.complete) {
+            const colors = colorThief
+              .getPalette(processedImg, 5)
+              .map(
+                ([r, g, b]) =>
+                  `#${((1 << 24) + (r << 16) + (g << 8) + b)
+                    .toString(16)
+                    .slice(1)}`
+              );
+            resolve(colors);
+          } else {
+            processedImg.onload = () => {
+              const colors = colorThief
+                .getPalette(processedImg, 5)
+                .map(
+                  ([r, g, b]) =>
+                    `#${((1 << 24) + (r << 16) + (g << 8) + b)
+                      .toString(16)
+                      .slice(1)}`
+                );
+              resolve(colors);
+            };
+          }
+        });
+        setColorPalette(palette);
+
         const processedDims = processImageDimensions(processedImg, scale);
 
         await db.saveState({
@@ -202,6 +264,7 @@ export const useImageProcessing = (stageSize: {
       } catch (error) {
         console.error("Image processing failed:", error);
         setBgRemovedImg(null);
+        setColorPalette([]);
       } finally {
         setIsLoading(false);
         URL.revokeObjectURL(url);
@@ -233,5 +296,6 @@ export const useImageProcessing = (stageSize: {
     handleImageUpload,
     isHydrated,
     isOffline,
+    colorPalette,
   };
 };
