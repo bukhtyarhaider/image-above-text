@@ -15,6 +15,7 @@
     "@tailwindcss/vite": "^4.0.17",
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.8.1",
+    "colorthief": "^2.6.0",
     "firebase": "^11.6.0",
     "lodash-es": "^4.17.21",
     "react": "^19.0.0",
