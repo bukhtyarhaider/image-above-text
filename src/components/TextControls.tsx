@@ -10,6 +10,7 @@ interface TextControlsProps {
     value: string | number
   ) => void;
   position: { x: number; y: number };
+  colorPalette: string[];
 }
 
 // Persistent state for all fonts loaded (won’t reset on re-render)
@@ -19,6 +20,7 @@ const TextControls: React.FC<TextControlsProps> = ({
   selectedText,
   updateTextProperty,
   position,
+  colorPalette,
 }) => {
   const [fontSearch, setFontSearch] = useState("");
   const [isFontListOpen, setIsFontListOpen] = useState(false);
@@ -152,7 +154,7 @@ const TextControls: React.FC<TextControlsProps> = ({
               ) : (
                 fontList.map((font, index) => (
                   <button
-                    key={`${font}-${index}`} // Unique key using index
+                    key={`${font}-${index}`}
                     onClick={() => {
                       updateTextProperty(selectedText.id, "fontFamily", font);
                       setIsFontListOpen(false);
@@ -215,6 +217,27 @@ const TextControls: React.FC<TextControlsProps> = ({
             />
           </div>
         </div>
+      </div>
+      <div>
+        {colorPalette.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            <span className="text-xs text-brand-700 block w-full">
+              Suggested Colors:
+            </span>
+            {colorPalette.map((color, index) => (
+              <button
+                key={index}
+                onClick={() =>
+                  updateTextProperty(selectedText.id, "fill", color)
+                }
+                className="w-6 h-6 rounded-full border border-brand-200 hover:border-brand-500 focus:ring-2 focus:ring-brand-300"
+                style={{ backgroundColor: color }}
+                aria-label={`Apply color ${color}`}
+                title={color}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
