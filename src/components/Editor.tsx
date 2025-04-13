@@ -19,6 +19,7 @@ import {
   PlusIcon,
   XMarkIcon,
   TrashIcon,
+  InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { HexColorPicker } from "react-colorful";
 import WebFont from "webfontloader";
@@ -27,6 +28,7 @@ import { db } from "../lib/db";
 import ExportPopup from "./ExportPopup";
 import Header from "./Header";
 import Loader from "./Loader";
+import AboutModal from "./AboutModal";
 
 const Editor: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,6 +50,7 @@ const Editor: React.FC = () => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [controlsPosition, setControlsPosition] = useState({ x: 0, y: 0 });
   const [showExportPopup, setShowExportPopup] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
 
   const stageSize = useStageSize(containerRef);
   const {
@@ -354,7 +357,7 @@ const Editor: React.FC = () => {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold text-brand-700">Editor Controls</h2>
         {storageStatus && (
-          <div className="text-xs text-brand-500">
+          <div className="text-xs text-brand-500 font-medium bg-brand-50 px-2 py-1 rounded-full">
             Storage: {(storageStatus.usage / 1024 / 1024).toFixed(1)}MB used
           </div>
         )}
@@ -421,6 +424,11 @@ const Editor: React.FC = () => {
         isOpen={showExportPopup}
         isMobile={isMobile}
         onClose={() => setShowExportPopup(false)}
+      />
+      <AboutModal
+        isOpen={showAboutModal}
+        onClose={() => setShowAboutModal(false)}
+        isMobile={isMobile}
       />
 
       <Header />
@@ -610,6 +618,16 @@ const Editor: React.FC = () => {
                     aria-label="Export image"
                   >
                     <DocumentCheckIcon className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAboutModal(true);
+                      setShowFabMenu(false);
+                    }}
+                    className="p-2 rounded-full w-10 h-10 bg-brand-500 text-white hover:bg-brand-700 flex items-center justify-center"
+                    aria-label="About"
+                  >
+                    <InformationCircleIcon className="w-5 h-5" />
                   </button>
                   <button
                     onClick={async () => {
