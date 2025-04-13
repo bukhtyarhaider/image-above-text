@@ -23,9 +23,9 @@ import {
 import { HexColorPicker } from "react-colorful";
 import WebFont from "webfontloader";
 import { FONTS } from "../constants/fonts";
-import logoImg from "/src/assets/logo.png";
 import { db } from "../lib/db";
 import ExportPopup from "./ExportPopup";
+import Header from "./Header";
 
 const Editor: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -430,11 +430,7 @@ const Editor: React.FC = () => {
         onClose={() => setShowExportPopup(false)}
       />
 
-      <header className="flex items-center justify-between p-4 bg-brand-500 text-white shrink-0">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <img src={logoImg} className="h-8" alt="Logo" /> Turquoise
-        </h2>
-      </header>
+      <Header />
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         <div
