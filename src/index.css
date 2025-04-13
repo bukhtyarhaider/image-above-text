@@ -205,3 +205,20 @@ body,
 .animate-\[fadeIn_0\.3s_ease-out\] {
   animation: fadeIn 0.3s ease-out;
 }
+
+@keyframes gradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+.bg-gradient-animated {
+  background: linear-gradient(45deg, #5de7f3, #b3ffab);
+  background-size: 200% 200%;
+  animation: gradientFlow 15s ease infinite;
+}
